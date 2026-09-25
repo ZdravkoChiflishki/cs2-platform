@@ -62,6 +62,8 @@ spec:
               value: /opt/cs2-platform/configs
             - name: CS2_ROOT
               value: /home/steam/cs2
+            - name: ENABLE_PLUGIN_RUNTIME
+              value: "true"
             - name: RCON_PASSWORD
               valueFrom:
                 secretKeyRef:
