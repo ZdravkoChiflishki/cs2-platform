@@ -36,6 +36,8 @@ ARG PLAYERSETTINGS_URL=https://github.com/NickFox007/PlayerSettingsCS2/releases/
 ARG PLAYERSETTINGS_SHA256=6d6645f728dbe07ca37264ab55f228ab4dcb3740cba02c52fbb27ef15faed0ac
 ARG ANYBASELIB_URL=https://github.com/NickFox007/AnyBaseLibCS2/releases/download/0.9.4/AnyBaseLib.zip
 ARG ANYBASELIB_SHA256=ab3190f43d7afc95d609bbb755279552fba0283ce0a2681c371601a4bd7867ff
+ARG GAMEMODEMANAGER_URL=https://github.com/nickj609/GameModeManager/releases/download/v1.0.63/GameModeManager_v1.0.63.zip
+ARG GAMEMODEMANAGER_SHA256=ece3bdae4d9460dc7916033083805d53069779dbb6e7be418ffcae928468d633
 
 RUN mkdir -p /opt/cs2-platform/plugin-runtime /tmp/cs2-plugin-runtime \
     && curl -fsSL "$METAMOD_URL" -o /tmp/cs2-plugin-runtime/metamod.tar.gz \
@@ -63,6 +65,9 @@ RUN mkdir -p /opt/cs2-platform/plugin-runtime /tmp/cs2-plugin-runtime \
     && curl -fsSL "$ANYBASELIB_URL" -o /tmp/cs2-plugin-runtime/anybaselib.zip \
     && echo "$ANYBASELIB_SHA256  /tmp/cs2-plugin-runtime/anybaselib.zip" | sha256sum -c - \
     && unzip -q /tmp/cs2-plugin-runtime/anybaselib.zip -d /opt/cs2-platform/plugin-runtime \
+    && curl -fsSL "$GAMEMODEMANAGER_URL" -o /tmp/cs2-plugin-runtime/gamemodemanager.zip \
+    && echo "$GAMEMODEMANAGER_SHA256  /tmp/cs2-plugin-runtime/gamemodemanager.zip" | sha256sum -c - \
+    && unzip -q /tmp/cs2-plugin-runtime/gamemodemanager.zip -d /opt/cs2-platform/plugin-runtime \
     && rm -rf /tmp/cs2-plugin-runtime
 
 RUN useradd --create-home --home-dir /home/steam --shell /bin/bash steam

@@ -54,14 +54,34 @@ plugins:
     notes: Shared library dependency for PlayerSettings and SimpleAdmin stack.
   gamemodemanager:
     displayName: GameModeManager
-    phase: planned
+    phase: enabled
     loader: counterstrikesharp
-    enabledByDefault: false
-    source: https://github.com/nickj609/GameModeManager
-    version: pending-selection
-    sha256: "0000000000000000000000000000000000000000000000000000000000000000"
+    enabledByDefault: true
+    source: https://github.com/nickj609/GameModeManager/releases/download/v1.0.63/GameModeManager_v1.0.63.zip
+    version: "1.0.63"
+    sha256: "ece3bdae4d9460dc7916033083805d53069779dbb6e7be418ffcae928468d633"
     entrypoint: addons/counterstrikesharp/plugins/GameModeManager/GameModeManager.dll
-    notes: Candidate for RTV/nominations; add only after minimal plugin runtime is stable.
+    notes: RTV/nominations and map/mode management; release also includes CS2-CustomVotes and MenuManagerAPI dependencies.
+  customvotes:
+    displayName: CS2-CustomVotes
+    phase: enabled
+    loader: counterstrikesharp
+    enabledByDefault: true
+    source: https://github.com/nickj609/GameModeManager/releases/download/v1.0.63/GameModeManager_v1.0.63.zip
+    version: bundled-with-gamemodemanager-1.0.63
+    sha256: "ece3bdae4d9460dc7916033083805d53069779dbb6e7be418ffcae928468d633"
+    entrypoint: addons/counterstrikesharp/plugins/CS2-CustomVotes/CS2-CustomVotes.dll
+    notes: Bundled GameModeManager dependency.
+  menumanagerapi:
+    displayName: MenuManagerAPI
+    phase: enabled
+    loader: counterstrikesharp
+    enabledByDefault: true
+    source: https://github.com/nickj609/GameModeManager/releases/download/v1.0.63/GameModeManager_v1.0.63.zip
+    version: bundled-with-gamemodemanager-1.0.63
+    sha256: "ece3bdae4d9460dc7916033083805d53069779dbb6e7be418ffcae928468d633"
+    entrypoint: addons/counterstrikesharp/plugins/MenuManagerAPI/MenuManagerAPI.dll
+    notes: Bundled GameModeManager dependency.
   quakesounds:
     displayName: QuakeSounds
     phase: planned

@@ -78,8 +78,17 @@ def test_repository_plugin_manifest_only_enables_cs2rcon():
     enabled = [plugin.name for plugin in catalog.plugins.values() if plugin.phase == "enabled"]
     defaults = [plugin.name for plugin in catalog.plugins.values() if plugin.enabled_by_default]
 
-    assert enabled == ["cs2rcon", "simpleadmin", "menumanager", "playersettings", "anybaselib"]
-    assert defaults == ["cs2rcon", "simpleadmin", "menumanager", "playersettings", "anybaselib"]
+    assert enabled == [
+        "cs2rcon",
+        "simpleadmin",
+        "menumanager",
+        "playersettings",
+        "anybaselib",
+        "gamemodemanager",
+        "customvotes",
+        "menumanagerapi",
+    ]
+    assert defaults == enabled
     assert catalog.plugins["cs2rcon"].version == "1.2.0"
     assert catalog.plugins["cs2rcon"].sha256 == "311425a06d7a4af980c6dfab188b8b60a598c2edae1fa33828bcb25b47b85639"
     assert catalog.plugins["simpleadmin"].version == "1.8.2b"
