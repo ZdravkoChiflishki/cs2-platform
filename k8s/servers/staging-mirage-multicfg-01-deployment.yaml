@@ -62,8 +62,6 @@ spec:
               value: /opt/cs2-platform/configs
             - name: CS2_ROOT
               value: /home/steam/cs2
-            - name: CS2_CACHE_ROOT
-              value: /cache/cs2
             - name: RCON_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -95,8 +93,6 @@ spec:
           volumeMounts:
             - name: cs2-data
               mountPath: /home/steam/cs2
-            - name: cs2-cache
-              mountPath: /cache/cs2
             - name: server-config
               mountPath: /opt/cs2-platform/configs/servers/staging-mirage-multicfg-01/cfg
           resources:
@@ -110,9 +106,6 @@ spec:
         - name: cs2-data
           persistentVolumeClaim:
             claimName: staging-mirage-multicfg-01-data
-        - name: cs2-cache
-          persistentVolumeClaim:
-            claimName: cs2-node-cache-slave5
         - name: server-config
           configMap:
             name: staging-mirage-multicfg-01-config

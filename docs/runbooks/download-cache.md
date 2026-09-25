@@ -23,12 +23,15 @@ The lock serializes cache writes so multiple server pods on the same node do not
 
 ## Current homelab staging cache
 
+Runtime cache support is implemented, but the live `k0s-slave5` staging server is not using it right now. A live warm-up attempt created a second 69G CS2 copy beside the existing 69G server PVC and pushed the node into Kubernetes `DiskPressure`, so the cache PVC was removed and staging was restored.
+
+Use the template only after adding/freeing enough node-local disk:
+
 ```text
-node: k0s-slave5
-PVC: cs2-node-cache-slave5
-mount: /cache/cs2
-size: 120Gi
-server using it: staging-mirage-multicfg-01
+template: k8s/templates/cs2-node-cache-pvc.yaml
+example mount: /cache/cs2
+required env: CS2_CACHE_ROOT=/cache/cs2
+recommended free headroom before enabling: existing server PVC + cache PVC + at least 40Gi kubelet headroom
 ```
 
 ## Behavior
