@@ -33,6 +33,15 @@ def test_repository_contains_valid_all_weapons_dm_profile():
     assert result.max_players == 24
 
 
+def test_all_weapons_dm_includes_post_gamemode_override():
+    cfg = Path("configs/modes/all-weapons-dm/cfg/gamemode_deathmatch_server.cfg")
+
+    assert cfg.exists()
+    text = cfg.read_text()
+    assert "bot_quota 0" in text
+    assert "bot_join_after_player 1" in text
+
+
 def test_validate_mode_rejects_banned_base_plugins(tmp_path):
     mode = tmp_path / "mode.yaml"
     mode.write_text(yaml.safe_dump({
