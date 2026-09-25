@@ -17,7 +17,7 @@ Key files:
 
 ## All Weapons DM
 
-Status: config profile implemented, not deployed as a second server yet.
+Status: live-tested temporarily on the staging PVC/server.
 
 Purpose: plugin-free Valve Deathmatch baseline for later testing before adding any DM plugin.
 
@@ -25,6 +25,7 @@ Key files:
 
 - `configs/modes/all-weapons-dm/mode.yaml`
 - `configs/modes/all-weapons-dm/cfg/all-weapons-dm.cfg`
+- `configs/modes/all-weapons-dm/cfg/gamemode_deathmatch_server.cfg`
 
 Launch settings for this mode should use:
 

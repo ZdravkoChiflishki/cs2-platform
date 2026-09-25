@@ -1,0 +1,11 @@
+name: retake
+displayName: Retake
+defaultMap: de_mirage
+exec: retake.cfg
+maxPlayers: 10
+gameType: 0
+gameMode: 0
+mapGroup: mg_active
+plugins:
+  enabled:
+    - cs2rcon

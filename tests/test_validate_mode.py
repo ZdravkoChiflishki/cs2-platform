@@ -42,6 +42,24 @@ def test_all_weapons_dm_includes_post_gamemode_override():
     assert "bot_join_after_player 1" in text
 
 
+def test_repository_contains_valid_retake_profile():
+    result = validate_mode_file(Path("configs/modes/retake/mode.yaml"))
+
+    assert result.name == "retake"
+    assert result.exec_cfg == "retake.cfg"
+    assert result.max_players == 10
+
+
+def test_retake_mode_stays_plugin_free_and_uses_valve_retake_skirmish():
+    cfg = Path("configs/modes/retake/cfg/retake.cfg")
+
+    assert cfg.exists()
+    text = cfg.read_text()
+    assert "sv_skirmish_id 12" in text
+    assert "bot_quota 0" in text
+    assert "css_plugins load" not in text
+
+
 def test_validate_mode_rejects_banned_base_plugins(tmp_path):
     mode = tmp_path / "mode.yaml"
     mode.write_text(yaml.safe_dump({
