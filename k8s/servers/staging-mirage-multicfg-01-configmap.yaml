@@ -5,7 +5,7 @@ metadata:
   namespace: cs2-servers
 data:
   server.cfg: |
-    hostname "ZIZO.GG Staging Multi-CFG"
+    hostname "ZIZO.GG Staging All Weapons DM"
     sv_cheats 0
     sv_lan 0
     bot_quota 0

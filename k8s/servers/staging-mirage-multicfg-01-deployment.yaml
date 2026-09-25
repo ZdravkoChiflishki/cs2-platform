@@ -6,7 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/name: cs2-server
     zizo.gg/server-id: staging-mirage-multicfg-01
-    zizo.gg/mode: multicfg
+    zizo.gg/mode: all-weapons-dm
     zizo.gg/region: eu
 spec:
   replicas: 1
@@ -21,10 +21,10 @@ spec:
       labels:
         app.kubernetes.io/name: cs2-server
         zizo.gg/server-id: staging-mirage-multicfg-01
-        zizo.gg/mode: multicfg
+        zizo.gg/mode: all-weapons-dm
         zizo.gg/region: eu
       annotations:
-        zizo.gg/display-name: "Multi-CFG"
+        zizo.gg/display-name: "All Weapons DM"
         zizo.gg/map: "de_mirage"
         zizo.gg/public-address: "zizogaming.duckdns.org:26001"
     spec:
@@ -41,7 +41,7 @@ spec:
             - name: SERVER_ID
               value: staging-mirage-multicfg-01
             - name: CS2_MODE
-              value: multicfg
+              value: all-weapons-dm
             - name: MAP
               value: de_mirage
             - name: PORT
@@ -51,7 +51,13 @@ spec:
             - name: TICKRATE
               value: "128"
             - name: EXEC
-              value: multicfg.cfg
+              value: all-weapons-dm.cfg
+            - name: GAME_TYPE
+              value: "1"
+            - name: GAME_MODE
+              value: "2"
+            - name: MAP_GROUP
+              value: mg_active
             - name: CONFIG_ROOT
               value: /opt/cs2-platform/configs
             - name: CS2_ROOT
