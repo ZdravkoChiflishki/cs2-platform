@@ -29,6 +29,7 @@ class ServerConfig:
     game_type: int = 0
     game_mode: int = 0
     map_group: str = "mg_active"
+    cache_root: Path | None = None
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> "ServerConfig":
@@ -57,7 +58,14 @@ class ServerConfig:
             game_type=_int_env(values, "GAME_TYPE", 0),
             game_mode=_int_env(values, "GAME_MODE", 0),
             map_group=values.get("MAP_GROUP", "mg_active"),
+            cache_root=_optional_path(values.get("CS2_CACHE_ROOT")),
         )
+
+
+def _optional_path(value: str | None) -> Path | None:
+    if value is None or value == "":
+        return None
+    return Path(value)
 
 
 def _int_env(env: Mapping[str, str], name: str, default: int) -> int:

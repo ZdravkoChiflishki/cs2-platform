@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cs2-node-cache-slave5
+  namespace: cs2-servers
+  labels:
+    app.kubernetes.io/name: cs2-cache
+    zizo.gg/cache-node: k0s-slave5
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 120Gi

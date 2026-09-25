@@ -2,6 +2,7 @@ resources:
   - base/namespace.yaml
   - base/serviceaccount.yaml
   - servers/staging-mirage-multicfg-01-configmap.yaml
+  - servers/cs2-node-cache-slave5-pvc.yaml
   - servers/staging-mirage-multicfg-01-pvc.yaml
   - servers/staging-mirage-multicfg-01-deployment.yaml
   - servers/staging-mirage-multicfg-01-service.yaml

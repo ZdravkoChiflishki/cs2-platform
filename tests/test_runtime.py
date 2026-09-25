@@ -20,6 +20,7 @@ def test_server_config_reads_required_environment(monkeypatch, tmp_path):
     monkeypatch.setenv("API_KEY", "apikey")
     monkeypatch.setenv("CS2_ROOT", str(tmp_path / "cs2"))
     monkeypatch.setenv("CONFIG_ROOT", str(tmp_path / "config"))
+    monkeypatch.setenv("CS2_CACHE_ROOT", str(tmp_path / "cache"))
 
     cfg = ServerConfig.from_env()
 
@@ -35,6 +36,7 @@ def test_server_config_reads_required_environment(monkeypatch, tmp_path):
     assert cfg.map_group == "mg_active"
     assert cfg.cs2_root == tmp_path / "cs2"
     assert cfg.config_root == tmp_path / "config"
+    assert cfg.cache_root == tmp_path / "cache"
 
 
 def test_server_config_reads_game_mode_environment(monkeypatch, tmp_path):

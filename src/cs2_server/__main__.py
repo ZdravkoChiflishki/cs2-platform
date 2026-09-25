@@ -12,6 +12,7 @@ from .launcher import build_launch_command
 from .overlay import OverlayPlan
 from .runtime_files import bootstrap_steamcmd, prepare_server_libraries, prepare_steamclient_libraries
 from .steam import SteamInstall
+from .steam_cache import SteamCache
 
 
 def log(event: str, **fields: object) -> None:
@@ -23,9 +24,16 @@ def main() -> int:
     config = ServerConfig.from_env()
     log("config_loaded", server_id=config.server_id, mode=config.mode, map=config.map, port=config.port)
 
+    cache = SteamCache(config.cs2_root, config.cache_root)
+    seed_plan = cache.seed_from_cache_if_available()
+    log("steam_cache_seed_checked", action=seed_plan.action, reason=seed_plan.reason)
+
     steam = SteamInstall(config.cs2_root)
     steam_plan = steam.ensure_updated()
     log("steam_update_checked", reason=steam_plan.reason, run_update=steam_plan.run_update, repaired=steam_plan.repair_stale_manifest)
+
+    sync_plan = cache.sync_to_cache_if_needed()
+    log("steam_cache_sync_checked", action=sync_plan.action, reason=sync_plan.reason)
 
     steamcmd_bootstrapped = bootstrap_steamcmd()
     log("steamcmd_bootstrapped", changed=steamcmd_bootstrapped)
