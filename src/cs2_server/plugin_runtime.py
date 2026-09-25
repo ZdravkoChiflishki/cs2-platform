@@ -29,6 +29,7 @@ class PluginRuntime:
         copied += _normalize_metamod_vdf(self.csgo_root)
         copied += _patch_gameinfo_for_metamod(self.csgo_root)
         copied += _write_css_admins(self.csgo_root, self.admin_steam_ids, self.admin_flags)
+        copied += _write_gamemodes_server(self.csgo_root)
         return PluginRuntimePlan(enabled=True, copied=copied, reason="applied")
 
 
@@ -89,6 +90,39 @@ def _write_css_admins(csgo_root: Path, admin_steam_ids: tuple[str, ...], admin_f
         return 0
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(rendered)
+    return 1
+
+
+def _write_gamemodes_server(csgo_root: Path) -> int:
+    path = csgo_root / "gamemodes_server.txt"
+    desired = '''"GameModes_Server.txt"
+{
+  "mapgroups"
+  {
+    "mg_active"
+    {
+      "name" "mg_active"
+      "maps"
+      {
+        "de_mirage" ""
+        "de_dust2" ""
+        "de_inferno" ""
+        "de_nuke" ""
+        "de_vertigo" ""
+        "de_ancient" ""
+        "de_anubis" ""
+        "de_train" ""
+        "de_overpass" ""
+        "cs_office" ""
+        "cs_italy" ""
+      }
+    }
+  }
+}
+'''
+    if path.exists() and path.read_text() == desired:
+        return 0
+    path.write_text(desired)
     return 1
 
 
