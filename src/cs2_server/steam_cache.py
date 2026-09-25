@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import fcntl
+import shutil
 import subprocess
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -98,13 +99,33 @@ def _rsync_tree(source: Path, target: Path) -> None:
     source = source.resolve()
     target = target.resolve()
     target.mkdir(parents=True, exist_ok=True)
-    subprocess.run(
-        [
-            "rsync",
-            "-a",
-            "--delete",
-            f"{source}/",
-            f"{target}/",
-        ],
-        check=True,
-    )
+    if shutil.which("rsync"):
+        subprocess.run(
+            [
+                "rsync",
+                "-a",
+                "--delete",
+                f"{source}/",
+                f"{target}/",
+            ],
+            check=True,
+        )
+        return
+    _copy_tree_with_delete(source, target)
+
+
+def _copy_tree_with_delete(source: Path, target: Path) -> None:
+    source_names = {child.name for child in source.iterdir()}
+    for child in target.iterdir():
+        if child.name not in source_names:
+            if child.is_dir():
+                shutil.rmtree(child)
+            else:
+                child.unlink()
+    for child in source.iterdir():
+        destination = target / child.name
+        if child.is_dir():
+            destination.mkdir(exist_ok=True)
+            _copy_tree_with_delete(child, destination)
+        else:
+            shutil.copy2(child, destination)
