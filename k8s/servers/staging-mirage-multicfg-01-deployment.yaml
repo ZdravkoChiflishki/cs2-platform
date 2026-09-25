@@ -33,7 +33,7 @@ spec:
         kubernetes.io/hostname: k0s-slave5
       containers:
         - name: cs2
-          image: zizobg/cs2-server:dev
+          image: zizobg/cs2-server@sha256:1a8b6eeaa2b70589aeab681fef4fefc1bc1b55a3efd9ec7479b85d4772082f9d
           imagePullPolicy: Always
           stdin: true
           tty: true
