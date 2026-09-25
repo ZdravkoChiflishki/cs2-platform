@@ -5,7 +5,7 @@ exec: all-weapons-dm.cfg
 maxPlayers: 24
 gameType: 1
 gameMode: 2
-mapGroup: mg_active
+mapGroup: mg_dm
 plugins:
   enabled:
     - cs2rcon

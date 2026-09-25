@@ -5,6 +5,28 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
+DEFAULT_MAPS = (
+    "de_mirage",
+    "de_dust2",
+    "de_inferno",
+    "de_nuke",
+    "de_vertigo",
+    "de_ancient",
+    "de_anubis",
+    "de_train",
+    "de_overpass",
+    "cs_office",
+    "cs_italy",
+)
+
+MAP_GROUPS = {
+    "mg_active": DEFAULT_MAPS,
+    "mg_dm": DEFAULT_MAPS,
+    "mg_multicfg": DEFAULT_MAPS,
+    "mg_retake": DEFAULT_MAPS,
+}
+
+
 @dataclass(frozen=True)
 class PluginRuntimePlan:
     enabled: bool
@@ -96,31 +118,21 @@ def _write_css_admins(csgo_root: Path, admin_steam_ids: tuple[str, ...], admin_f
 
 def _write_gamemodes_server(csgo_root: Path) -> int:
     path = csgo_root / "gamemodes_server.txt"
-    desired = '''"GameModes_Server.txt"
-{
-  "mapgroups"
-  {
-    "mg_active"
-    {
-      "name" "mg_active"
-      "maps"
-      {
-        "de_mirage" ""
-        "de_dust2" ""
-        "de_inferno" ""
-        "de_nuke" ""
-        "de_vertigo" ""
-        "de_ancient" ""
-        "de_anubis" ""
-        "de_train" ""
-        "de_overpass" ""
-        "cs_office" ""
-        "cs_italy" ""
-      }
-    }
-  }
-}
-'''
+    lines = ['"GameModes_Server.txt"', "{", '  "mapgroups"', "  {"]
+    for group_name, maps in MAP_GROUPS.items():
+        lines.extend(
+            [
+                f'    "{group_name}"',
+                "    {",
+                f'      "name" "{group_name}"',
+                '      "maps"',
+                "      {",
+            ]
+        )
+        lines.extend(f'        "{map_name}" ""' for map_name in maps)
+        lines.extend(["      }", "    }"])
+    lines.extend(["  }", "}", ""])
+    desired = "\n".join(lines)
     if path.exists() and path.read_text() == desired:
         return 0
     path.write_text(desired)
@@ -138,9 +150,9 @@ def _write_gamemode_manager_config(csgo_root: Path) -> int:
             "MinRounds": 1,
             "MinPlayers": 1,
             "VoteDuration": 30,
-            "OptionsToShow": 6,
+            "OptionsToShow": 10,
             "VotePercentage": 51,
-            "OptionsInCoolDown": 2,
+            "OptionsInCoolDown": 3,
             "EndOfMapVote": True,
             "IncludeModes": False,
             "IncludeExtend": False,
@@ -152,7 +164,7 @@ def _write_gamemode_manager_config(csgo_root: Path) -> int:
             "HideHudAfterVote": False,
             "NominationEnabled": True,
             "MaxNominationWinners": 1,
-            "ChangeImmediately": False,
+            "ChangeImmediately": True,
             "TriggerKillsBeforeEnd": 13,
             "TriggerRoundsBeforeEnd": 2,
             "TriggerSecondsBeforeEnd": 120,
@@ -165,7 +177,7 @@ def _write_gamemode_manager_config(csgo_root: Path) -> int:
         "Rotation": {
             "Enabled": False,
             "Cycle": 0,
-            "MapGroups": ["mg_active"],
+            "MapGroups": ["mg_dm"],
             "WhenServerEmpty": False,
             "CustomTimeLimit": 900,
             "ModeRotation": False,
@@ -174,12 +186,12 @@ def _write_gamemode_manager_config(csgo_root: Path) -> int:
             "Schedule": [],
         },
         "GameModes": {
-            "Default": {"Name": "all-weapons-dm", "Config": "all-weapons-dm.cfg", "DefaultMap": "de_mirage", "MapGroups": ["mg_active"]},
+            "Default": {"Name": "all-weapons-dm", "Config": "all-weapons-dm.cfg", "DefaultMap": "de_mirage", "MapGroups": ["mg_dm"]},
             "MapGroupFile": "gamemodes_server.txt",
             "List": [
-                {"Name": "all-weapons-dm", "Config": "all-weapons-dm.cfg", "DefaultMap": "de_mirage", "MapGroups": ["mg_active"]},
-                {"Name": "multicfg", "Config": "multicfg.cfg", "DefaultMap": "de_mirage", "MapGroups": ["mg_active"]},
-                {"Name": "retake", "Config": "retake.cfg", "DefaultMap": "de_mirage", "MapGroups": ["mg_active"]},
+                {"Name": "all-weapons-dm", "Config": "all-weapons-dm.cfg", "DefaultMap": "de_mirage", "MapGroups": ["mg_dm"]},
+                {"Name": "multicfg", "Config": "multicfg.cfg", "DefaultMap": "de_mirage", "MapGroups": ["mg_multicfg"]},
+                {"Name": "retake", "Config": "retake.cfg", "DefaultMap": "de_mirage", "MapGroups": ["mg_retake"]},
             ],
         },
     }

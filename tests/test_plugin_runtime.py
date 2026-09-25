@@ -32,9 +32,17 @@ def test_plugin_runtime_copies_metamod_and_counterstrikesharp_files(tmp_path):
     assert '"addons/metamod/bin/server"' in (csgo / "addons" / "metamod_x64.vdf").read_text()
     assert "Game\tcsgo/addons/metamod" in (csgo / "gameinfo.gi").read_text()
     assert '"mg_active"' in (csgo / "gamemodes_server.txt").read_text()
+    assert '"mg_dm"' in (csgo / "gamemodes_server.txt").read_text()
     gmm_config = csgo / "addons" / "counterstrikesharp" / "configs" / "plugins" / "GameModeManager" / "GameModeManager.json"
-    assert '"MinPlayers": 1' in gmm_config.read_text()
-    assert '"Name": "all-weapons-dm"' in gmm_config.read_text()
+    gmm_text = gmm_config.read_text()
+    assert '"MinPlayers": 1' in gmm_text
+    assert '"ChangeImmediately": true' in gmm_text
+    assert '"OptionsToShow": 10' in gmm_text
+    assert '"Name": "all-weapons-dm"' in gmm_text
+    gmm = json.loads("\n".join(line for line in gmm_text.splitlines() if not line.strip().startswith("//")))
+    assert gmm["GameModes"]["Default"]["MapGroups"] == ["mg_dm"]
+    assert gmm["GameModes"]["List"][1]["MapGroups"] == ["mg_multicfg"]
+    assert gmm["GameModes"]["List"][2]["MapGroups"] == ["mg_retake"]
 
 
 def test_plugin_runtime_fails_when_enabled_but_missing(tmp_path):

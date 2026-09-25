@@ -57,7 +57,7 @@ spec:
             - name: GAME_MODE
               value: "2"
             - name: MAP_GROUP
-              value: mg_active
+              value: mg_dm
             - name: CONFIG_ROOT
               value: /opt/cs2-platform/configs
             - name: CS2_ROOT
