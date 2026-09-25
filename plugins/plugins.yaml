@@ -1,0 +1,74 @@
+# Plugin manifest/lock for cs2-platform.
+# This declares allowed plugins and pinned metadata only.
+# It does not install or load plugin binaries yet.
+plugins:
+  cs2rcon:
+    displayName: CS2Rcon
+    phase: planned
+    loader: counterstrikesharp
+    enabledByDefault: false
+    source: https://github.com/daffyyyy/CS2Rcon
+    version: pending-selection
+    sha256: "0000000000000000000000000000000000000000000000000000000000000000"
+    entrypoint: addons/counterstrikesharp/plugins/CS2Rcon/CS2Rcon.dll
+    notes: Minimal first admin/RCON plugin candidate; not installed in runtime image yet.
+  simpleadmin:
+    displayName: SimpleAdmin
+    phase: planned
+    loader: counterstrikesharp
+    enabledByDefault: false
+    source: https://github.com/daffyyyy/CS2-SimpleAdmin
+    version: pending-selection
+    sha256: "0000000000000000000000000000000000000000000000000000000000000000"
+    entrypoint: addons/counterstrikesharp/plugins/SimpleAdmin/SimpleAdmin.dll
+    notes: Candidate for minimal admin layer after CSSSharp runtime is staged.
+  gamemodemanager:
+    displayName: GameModeManager
+    phase: planned
+    loader: counterstrikesharp
+    enabledByDefault: false
+    source: https://github.com/nickj609/GameModeManager
+    version: pending-selection
+    sha256: "0000000000000000000000000000000000000000000000000000000000000000"
+    entrypoint: addons/counterstrikesharp/plugins/GameModeManager/GameModeManager.dll
+    notes: Candidate for RTV/nominations; add only after minimal plugin runtime is stable.
+  quakesounds:
+    displayName: QuakeSounds
+    phase: planned
+    loader: counterstrikesharp
+    enabledByDefault: false
+    source: pending-selection
+    version: pending-selection
+    sha256: "0000000000000000000000000000000000000000000000000000000000000000"
+    entrypoint: addons/counterstrikesharp/plugins/QuakeSounds/QuakeSounds.dll
+    notes: Sound layer candidate; must be isolated from Deathmatch plugin sounds.
+  deathmatch:
+    displayName: Deathmatch
+    phase: planned
+    loader: counterstrikesharp
+    enabledByDefault: false
+    source: pending-selection
+    version: pending-selection
+    sha256: "0000000000000000000000000000000000000000000000000000000000000000"
+    entrypoint: addons/counterstrikesharp/plugins/Deathmatch/Deathmatch.dll
+    notes: Add only after plugin-free All Weapons DM connect/disconnect stability is accepted.
+  inventorysimulator:
+    displayName: InventorySimulator
+    phase: disabled
+    loader: counterstrikesharp
+    enabledByDefault: false
+    source: pending-selection
+    version: pending-selection
+    sha256: "0000000000000000000000000000000000000000000000000000000000000000"
+    entrypoint: addons/counterstrikesharp/plugins/InventorySimulator/InventorySimulator.dll
+    notes: Heavy player-connect/skins plugin; banned from default startup.
+  discordstatus:
+    displayName: DiscordStatus
+    phase: disabled
+    loader: counterstrikesharp
+    enabledByDefault: false
+    source: pending-selection
+    version: pending-selection
+    sha256: "0000000000000000000000000000000000000000000000000000000000000000"
+    entrypoint: addons/counterstrikesharp/plugins/DiscordStatus/DiscordStatus.dll
+    notes: Not part of minimal default runtime.

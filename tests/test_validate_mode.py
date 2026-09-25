@@ -75,3 +75,55 @@ def test_validate_mode_rejects_banned_base_plugins(tmp_path):
 
     with pytest.raises(ValidationError, match="InventorySimulator"):
         validate_mode_file(mode)
+
+
+def test_validate_mode_rejects_unknown_plugins(tmp_path):
+    catalog = tmp_path / "plugins.yaml"
+    catalog.write_text(yaml.safe_dump({"plugins": {}}))
+    mode = tmp_path / "mode.yaml"
+    mode.write_text(yaml.safe_dump({
+        "name": "unknown",
+        "displayName": "Unknown",
+        "defaultMap": "de_mirage",
+        "exec": "unknown.cfg",
+        "maxPlayers": 24,
+        "plugins": {"enabled": ["not-real"]},
+    }))
+    (tmp_path / "cfg").mkdir()
+    (tmp_path / "cfg" / "unknown.cfg").write_text("echo unknown")
+
+    with pytest.raises(ValidationError, match="unknown plugin not-real"):
+        validate_mode_file(mode, plugin_catalog_path=catalog)
+
+
+def test_validate_mode_rejects_disabled_plugins_from_manifest(tmp_path):
+    catalog = tmp_path / "plugins.yaml"
+    catalog.write_text(yaml.safe_dump({
+        "plugins": {
+            "heavy": {
+                "displayName": "Heavy",
+                "phase": "disabled",
+                "loader": "counterstrikesharp",
+                "enabledByDefault": False,
+                "source": "pending",
+                "version": "pending",
+                "sha256": "2" * 64,
+                "entrypoint": "heavy.dll",
+            }
+        }
+    }))
+    mode = tmp_path / "mode.yaml"
+    mode.write_text(yaml.safe_dump({
+        "name": "bad",
+        "displayName": "Bad",
+        "defaultMap": "de_mirage",
+        "exec": "bad.cfg",
+        "maxPlayers": 24,
+        "plugins": {"enabled": ["heavy"]},
+    }))
+    (tmp_path / "cfg").mkdir()
+    (tmp_path / "cfg" / "bad.cfg").write_text("echo bad")
+
+    with pytest.raises(ValidationError, match="disabled plugin enabled: heavy"):
+        validate_mode_file(mode, plugin_catalog_path=catalog)
+
