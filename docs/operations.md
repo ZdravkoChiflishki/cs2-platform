@@ -57,3 +57,25 @@ The workflow builds `zizobg/cs2-server`, pushes the image, commits the pinned di
 3. Check final `ClientPutInServer`, plugin, or map messages.
 4. Disable only one suspect plugin/profile at a time.
 5. Keep production rollback to previous image digest and config commit.
+
+Detailed runbooks:
+
+- `docs/runbooks/production-rollout.md`
+- `docs/runbooks/add-server.md`
+- `docs/runbooks/crash-loop.md`
+- `docs/runbooks/plugin-upgrade.md`
+
+## Final image contents
+
+The runtime image intentionally copies only:
+
+```text
+pyproject.toml
+README.md
+src/
+configs/
+image/entrypoint.sh
+image/scripts/
+```
+
+Repository tests remain in Git for development and CI, but they are not copied into the production image.
