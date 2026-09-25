@@ -33,5 +33,7 @@ The Python runtime:
 ```bash
 pytest -q
 PYTHONPATH=src python -m cs2_tools.validate_mode configs/modes/multicfg/mode.yaml
+PYTHONPATH=src python -m cs2_tools.query_server 192.168.0.8:26001
+PYTHONPATH=src python -m cs2_tools.smoke
 kubectl kustomize k8s >/tmp/cs2-platform.yaml
 ```

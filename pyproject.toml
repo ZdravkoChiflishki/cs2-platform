@@ -19,6 +19,8 @@ dev = [
 [project.scripts]
 cs2-server = "cs2_server.__main__:main"
 cs2-validate-mode = "cs2_tools.validate_mode:main"
+cs2-query-server = "cs2_tools.query_server:main"
+cs2-smoke = "cs2_tools.smoke:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
