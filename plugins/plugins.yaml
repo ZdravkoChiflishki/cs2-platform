@@ -4,14 +4,14 @@
 plugins:
   cs2rcon:
     displayName: CS2Rcon
-    phase: planned
+    phase: enabled
     loader: counterstrikesharp
-    enabledByDefault: false
-    source: https://github.com/daffyyyy/CS2Rcon
-    version: pending-selection
-    sha256: "0000000000000000000000000000000000000000000000000000000000000000"
+    enabledByDefault: true
+    source: https://github.com/LordFetznschaedl/CS2Rcon/releases/download/1.2.0/CS2Rcon-1.2.0.zip
+    version: "1.2.0"
+    sha256: "311425a06d7a4af980c6dfab188b8b60a598c2edae1fa33828bcb25b47b85639"
     entrypoint: addons/counterstrikesharp/plugins/CS2Rcon/CS2Rcon.dll
-    notes: Minimal first admin/RCON plugin candidate; not installed in runtime image yet.
+    notes: Minimal first admin/RCON plugin candidate; enabled only after MetaMod/CSSSharp loader stability was verified.
   simpleadmin:
     displayName: SimpleAdmin
     phase: planned

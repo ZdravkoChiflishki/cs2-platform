@@ -72,9 +72,13 @@ def test_plugin_catalog_rejects_invalid_hash(tmp_path):
         PluginCatalog.load(manifest)
 
 
-def test_repository_plugin_manifest_has_no_runtime_enabled_plugins():
+def test_repository_plugin_manifest_only_enables_cs2rcon():
     catalog = PluginCatalog.load()
 
-    assert "cs2rcon" in catalog.plugins
-    assert all(plugin.phase in {"planned", "disabled"} for plugin in catalog.plugins.values())
-    assert all(not plugin.enabled_by_default for plugin in catalog.plugins.values())
+    enabled = [plugin.name for plugin in catalog.plugins.values() if plugin.phase == "enabled"]
+    defaults = [plugin.name for plugin in catalog.plugins.values() if plugin.enabled_by_default]
+
+    assert enabled == ["cs2rcon"]
+    assert defaults == ["cs2rcon"]
+    assert catalog.plugins["cs2rcon"].version == "1.2.0"
+    assert catalog.plugins["cs2rcon"].sha256 == "311425a06d7a4af980c6dfab188b8b60a598c2edae1fa33828bcb25b47b85639"
