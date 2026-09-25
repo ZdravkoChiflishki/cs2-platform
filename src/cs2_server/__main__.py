@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from .config import ServerConfig
 from .launcher import build_launch_command
 from .overlay import OverlayPlan
+from .plugin_runtime import PluginRuntime
 from .runtime_files import bootstrap_steamcmd, prepare_server_libraries, prepare_steamclient_libraries
 from .steam import SteamInstall
 from .steam_cache import SteamCache
@@ -43,6 +44,13 @@ def main() -> int:
 
     copied_libraries = prepare_server_libraries(config.cs2_root)
     log("server_libraries_prepared", copied=copied_libraries)
+
+    plugin_plan = PluginRuntime(
+        source_root=config.plugin_runtime_root,
+        csgo_root=config.cs2_root / "game" / "csgo",
+        enabled=config.plugin_runtime_enabled,
+    ).apply()
+    log("plugin_runtime_checked", enabled=plugin_plan.enabled, copied=plugin_plan.copied, reason=plugin_plan.reason)
 
     plan = OverlayPlan.from_roots(
         config_root=config.config_root,

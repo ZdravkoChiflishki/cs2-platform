@@ -30,6 +30,8 @@ class ServerConfig:
     game_mode: int = 0
     map_group: str = "mg_active"
     cache_root: Path | None = None
+    plugin_runtime_enabled: bool = False
+    plugin_runtime_root: Path = Path("/opt/cs2-platform/plugin-runtime")
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> "ServerConfig":
@@ -59,6 +61,8 @@ class ServerConfig:
             game_mode=_int_env(values, "GAME_MODE", 0),
             map_group=values.get("MAP_GROUP", "mg_active"),
             cache_root=_optional_path(values.get("CS2_CACHE_ROOT")),
+            plugin_runtime_enabled=_bool_env(values, "ENABLE_PLUGIN_RUNTIME", False),
+            plugin_runtime_root=Path(values.get("PLUGIN_RUNTIME_ROOT", "/opt/cs2-platform/plugin-runtime")),
         )
 
 
@@ -66,6 +70,13 @@ def _optional_path(value: str | None) -> Path | None:
     if value is None or value == "":
         return None
     return Path(value)
+
+
+def _bool_env(env: Mapping[str, str], name: str, default: bool) -> bool:
+    value = env.get(name)
+    if value is None or value == "":
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
 def _int_env(env: Mapping[str, str], name: str, default: int) -> int:

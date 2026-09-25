@@ -65,6 +65,7 @@ Detailed runbooks:
 - `docs/runbooks/server-generator.md`
 - `docs/runbooks/download-cache.md`
 - `docs/runbooks/plugin-manifest.md`
+- `docs/runbooks/minimal-plugin-runtime.md`
 - `docs/runbooks/crash-loop.md`
 - `docs/runbooks/plugin-upgrade.md`
 

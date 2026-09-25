@@ -1,6 +1,6 @@
 # Plugin manifest/lock for cs2-platform.
-# This declares allowed plugins and pinned metadata only.
-# It does not install or load plugin binaries yet.
+# This declares allowed plugins and pinned metadata.
+# Runtime loaders can be present in the image, but plugin loading stays mode-scoped.
 plugins:
   cs2rcon:
     displayName: CS2Rcon

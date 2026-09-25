@@ -37,6 +37,8 @@ def test_server_config_reads_required_environment(monkeypatch, tmp_path):
     assert cfg.cs2_root == tmp_path / "cs2"
     assert cfg.config_root == tmp_path / "config"
     assert cfg.cache_root == tmp_path / "cache"
+    assert cfg.plugin_runtime_enabled is False
+    assert cfg.plugin_runtime_root == Path("/opt/cs2-platform/plugin-runtime")
 
 
 def test_server_config_reads_game_mode_environment(monkeypatch, tmp_path):
@@ -54,6 +56,19 @@ def test_server_config_reads_game_mode_environment(monkeypatch, tmp_path):
     assert cfg.game_type == 1
     assert cfg.game_mode == 2
     assert cfg.map_group == "mg_active"
+
+
+def test_server_config_reads_plugin_runtime_environment(monkeypatch, tmp_path):
+    monkeypatch.setenv("RCON_PASSWORD", "secret")
+    monkeypatch.setenv("STEAM_ACCOUNT", "token")
+    monkeypatch.setenv("API_KEY", "apikey")
+    monkeypatch.setenv("ENABLE_PLUGIN_RUNTIME", "true")
+    monkeypatch.setenv("PLUGIN_RUNTIME_ROOT", str(tmp_path / "plugin-runtime"))
+
+    cfg = ServerConfig.from_env()
+
+    assert cfg.plugin_runtime_enabled is True
+    assert cfg.plugin_runtime_root == tmp_path / "plugin-runtime"
 
 
 def test_server_config_fails_when_required_secret_missing(monkeypatch):
