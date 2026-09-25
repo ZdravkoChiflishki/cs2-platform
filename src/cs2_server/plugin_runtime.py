@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -16,6 +17,7 @@ class PluginRuntime:
     source_root: Path
     csgo_root: Path
     enabled: bool
+    admin_steam_ids: tuple[str, ...] = ()
 
     def apply(self) -> PluginRuntimePlan:
         if not self.enabled:
@@ -25,6 +27,7 @@ class PluginRuntime:
         copied = _copy_tree(self.source_root, self.csgo_root)
         copied += _normalize_metamod_vdf(self.csgo_root)
         copied += _patch_gameinfo_for_metamod(self.csgo_root)
+        copied += _write_css_admins(self.csgo_root, self.admin_steam_ids)
         return PluginRuntimePlan(enabled=True, copied=copied, reason="applied")
 
 
@@ -65,6 +68,26 @@ def _patch_gameinfo_for_metamod(csgo_root: Path) -> int:
         return 0
     lines.insert(insert_at, f"{indent}Game\tcsgo/addons/metamod\n")
     path.write_text("".join(lines))
+    return 1
+
+
+def _write_css_admins(csgo_root: Path, admin_steam_ids: tuple[str, ...]) -> int:
+    if not admin_steam_ids:
+        return 0
+    path = csgo_root / "addons" / "counterstrikesharp" / "configs" / "admins.json"
+    desired = {
+        f"admin-{index + 1}": {
+            "identity": steam_id,
+            "immunity": 100,
+            "flags": ["@css/rcon"],
+        }
+        for index, steam_id in enumerate(admin_steam_ids)
+    }
+    rendered = json.dumps(desired, indent=2, sort_keys=True) + "\n"
+    if path.exists() and path.read_text() == rendered:
+        return 0
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(rendered)
     return 1
 
 

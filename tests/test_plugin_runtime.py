@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 
 from cs2_server.plugin_runtime import PluginRuntime, PluginRuntimePlan
 
@@ -38,3 +39,22 @@ def test_plugin_runtime_fails_when_enabled_but_missing(tmp_path):
     plan = runtime.apply()
 
     assert plan == PluginRuntimePlan(enabled=True, copied=0, reason="source_missing")
+
+
+def test_plugin_runtime_writes_css_admins_for_rcon_permission(tmp_path):
+    source = tmp_path / "runtime"
+    csgo = tmp_path / "csgo"
+    source.mkdir()
+
+    runtime = PluginRuntime(
+        source_root=source,
+        csgo_root=csgo,
+        enabled=True,
+        admin_steam_ids=("76561199127257988",),
+    )
+    plan = runtime.apply()
+
+    admins = json.loads((csgo / "addons" / "counterstrikesharp" / "configs" / "admins.json").read_text())
+    assert plan.copied == 2
+    assert admins["admin-1"]["identity"] == "76561199127257988"
+    assert admins["admin-1"]["flags"] == ["@css/rcon"]

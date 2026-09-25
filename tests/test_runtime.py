@@ -64,11 +64,13 @@ def test_server_config_reads_plugin_runtime_environment(monkeypatch, tmp_path):
     monkeypatch.setenv("API_KEY", "apikey")
     monkeypatch.setenv("ENABLE_PLUGIN_RUNTIME", "true")
     monkeypatch.setenv("PLUGIN_RUNTIME_ROOT", str(tmp_path / "plugin-runtime"))
+    monkeypatch.setenv("CS2_ADMIN_STEAM_IDS", "76561199127257988, 76561198000000000")
 
     cfg = ServerConfig.from_env()
 
     assert cfg.plugin_runtime_enabled is True
     assert cfg.plugin_runtime_root == tmp_path / "plugin-runtime"
+    assert cfg.admin_steam_ids == ("76561199127257988", "76561198000000000")
 
 
 def test_server_config_fails_when_required_secret_missing(monkeypatch):

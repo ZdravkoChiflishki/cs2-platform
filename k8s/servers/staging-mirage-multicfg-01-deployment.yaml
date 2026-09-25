@@ -64,6 +64,8 @@ spec:
               value: /home/steam/cs2
             - name: ENABLE_PLUGIN_RUNTIME
               value: "true"
+            - name: CS2_ADMIN_STEAM_IDS
+              value: "76561199127257988"
             - name: RCON_PASSWORD
               valueFrom:
                 secretKeyRef:

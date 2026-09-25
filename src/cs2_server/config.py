@@ -32,6 +32,7 @@ class ServerConfig:
     cache_root: Path | None = None
     plugin_runtime_enabled: bool = False
     plugin_runtime_root: Path = Path("/opt/cs2-platform/plugin-runtime")
+    admin_steam_ids: tuple[str, ...] = ()
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> "ServerConfig":
@@ -63,6 +64,7 @@ class ServerConfig:
             cache_root=_optional_path(values.get("CS2_CACHE_ROOT")),
             plugin_runtime_enabled=_bool_env(values, "ENABLE_PLUGIN_RUNTIME", False),
             plugin_runtime_root=Path(values.get("PLUGIN_RUNTIME_ROOT", "/opt/cs2-platform/plugin-runtime")),
+            admin_steam_ids=_csv_env(values.get("CS2_ADMIN_STEAM_IDS")),
         )
 
 
@@ -70,6 +72,12 @@ def _optional_path(value: str | None) -> Path | None:
     if value is None or value == "":
         return None
     return Path(value)
+
+
+def _csv_env(value: str | None) -> tuple[str, ...]:
+    if value is None or value == "":
+        return ()
+    return tuple(item.strip() for item in value.split(",") if item.strip())
 
 
 def _bool_env(env: Mapping[str, str], name: str, default: bool) -> bool:
