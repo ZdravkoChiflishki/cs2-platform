@@ -62,6 +62,8 @@ spec:
               value: /opt/cs2-platform/configs
             - name: CS2_ROOT
               value: /home/steam/cs2
+            - name: STEAM_UPDATE_POLICY
+              value: always
             - name: ENABLE_PLUGIN_RUNTIME
               value: "true"
             - name: CS2_ADMIN_STEAM_IDS

@@ -29,7 +29,7 @@ def main() -> int:
     seed_plan = cache.seed_from_cache_if_available()
     log("steam_cache_seed_checked", action=seed_plan.action, reason=seed_plan.reason)
 
-    steam = SteamInstall(config.cs2_root)
+    steam = SteamInstall(config.cs2_root, update_policy=config.steam_update_policy)
     steam_plan = steam.ensure_updated()
     log("steam_update_checked", reason=steam_plan.reason, run_update=steam_plan.run_update, repaired=steam_plan.repair_stale_manifest)
 

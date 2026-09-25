@@ -30,6 +30,7 @@ class ServerConfig:
     game_mode: int = 0
     map_group: str = "mg_active"
     cache_root: Path | None = None
+    steam_update_policy: str = "always"
     plugin_runtime_enabled: bool = False
     plugin_runtime_root: Path = Path("/opt/cs2-platform/plugin-runtime")
     admin_steam_ids: tuple[str, ...] = ()
@@ -63,6 +64,7 @@ class ServerConfig:
             game_mode=_int_env(values, "GAME_MODE", 0),
             map_group=values.get("MAP_GROUP", "mg_active"),
             cache_root=_optional_path(values.get("CS2_CACHE_ROOT")),
+            steam_update_policy=values.get("STEAM_UPDATE_POLICY", "always"),
             plugin_runtime_enabled=_bool_env(values, "ENABLE_PLUGIN_RUNTIME", False),
             plugin_runtime_root=Path(values.get("PLUGIN_RUNTIME_ROOT", "/opt/cs2-platform/plugin-runtime")),
             admin_steam_ids=_csv_env(values.get("CS2_ADMIN_STEAM_IDS")),

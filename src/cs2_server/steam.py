@@ -19,6 +19,7 @@ class SteamUpdatePlan:
 class SteamInstall:
     cs2_root: Path
     steamcmd: Path = Path("/opt/steamcmd/steamcmd.sh")
+    update_policy: str = "always"
 
     @property
     def manifest_path(self) -> Path:
@@ -30,6 +31,8 @@ class SteamInstall:
 
         manifest = SteamManifest.read(self.manifest_path)
         if manifest.is_ready:
+            if self.update_policy == "always":
+                return SteamUpdatePlan(repair_stale_manifest=False, run_update=True, reason="policy_always")
             return SteamUpdatePlan(repair_stale_manifest=False, run_update=False, reason="already_ready")
         if manifest.needs_repair:
             return SteamUpdatePlan(repair_stale_manifest=True, run_update=True, reason="stale_manifest")
