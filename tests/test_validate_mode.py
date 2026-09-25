@@ -25,6 +25,14 @@ def test_validate_mode_accepts_minimal_multicfg_profile(tmp_path):
     assert result.exec_cfg == "multicfg.cfg"
 
 
+def test_repository_contains_valid_all_weapons_dm_profile():
+    result = validate_mode_file(Path("configs/modes/all-weapons-dm/mode.yaml"))
+
+    assert result.name == "all-weapons-dm"
+    assert result.exec_cfg == "all-weapons-dm.cfg"
+    assert result.max_players == 24
+
+
 def test_validate_mode_rejects_banned_base_plugins(tmp_path):
     mode = tmp_path / "mode.yaml"
     mode.write_text(yaml.safe_dump({

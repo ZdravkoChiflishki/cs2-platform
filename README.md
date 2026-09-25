@@ -8,6 +8,7 @@ Python-first CS2 server platform for running small, scalable, PRACC-like servers
 - Python startup application instead of a large shell entrypoint.
 - One pod = one CS2 server instance.
 - First server mode: `multicfg` on `de_mirage`.
+- Second mode profile: `all-weapons-dm` as a plugin-free Valve Deathmatch baseline, not deployed until the first server soak is accepted.
 - GitOps/Kubernetes-ready manifests.
 - Explicit plugin policy: no ranks, skins, GameCMS, DiscordStatus, or large global plugin stacks by default.
 

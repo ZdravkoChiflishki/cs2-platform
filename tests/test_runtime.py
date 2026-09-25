@@ -30,8 +30,28 @@ def test_server_config_reads_required_environment(monkeypatch, tmp_path):
     assert cfg.maxplayers == 24
     assert cfg.tickrate == 128
     assert cfg.rcon_password == "secret"
+    assert cfg.game_type == 0
+    assert cfg.game_mode == 0
+    assert cfg.map_group == "mg_active"
     assert cfg.cs2_root == tmp_path / "cs2"
     assert cfg.config_root == tmp_path / "config"
+
+
+def test_server_config_reads_game_mode_environment(monkeypatch, tmp_path):
+    monkeypatch.setenv("RCON_PASSWORD", "secret")
+    monkeypatch.setenv("STEAM_ACCOUNT", "token")
+    monkeypatch.setenv("API_KEY", "apikey")
+    monkeypatch.setenv("GAME_TYPE", "1")
+    monkeypatch.setenv("GAME_MODE", "2")
+    monkeypatch.setenv("MAP_GROUP", "mg_active")
+    monkeypatch.setenv("CS2_ROOT", str(tmp_path / "cs2"))
+    monkeypatch.setenv("CONFIG_ROOT", str(tmp_path / "config"))
+
+    cfg = ServerConfig.from_env()
+
+    assert cfg.game_type == 1
+    assert cfg.game_mode == 2
+    assert cfg.map_group == "mg_active"
 
 
 def test_server_config_fails_when_required_secret_missing(monkeypatch):
@@ -105,4 +125,35 @@ def test_build_launch_command_preserves_explicit_values(tmp_path):
     assert command[command.index("+sv_visiblemaxplayers") + 1] == "24"
     assert command[command.index("+map") + 1] == "de_mirage"
     assert command[command.index("+exec") + 1] == "multicfg.cfg"
+    assert command[command.index("+game_type") + 1] == "0"
+    assert command[command.index("+game_mode") + 1] == "0"
+    assert command[command.index("+mapgroup") + 1] == "mg_active"
     assert command[command.index("+sv_setsteamaccount") + 1] == "steam-token"
+
+
+def test_build_launch_command_uses_explicit_game_mode_values(tmp_path):
+    cfg = ServerConfig(
+        server_id="dm",
+        mode="all-weapons-dm",
+        map="de_mirage",
+        port=26002,
+        maxplayers=24,
+        tickrate=128,
+        rcon_password="secret",
+        steam_account="steam-token",
+        api_key="api-key",
+        server_password="",
+        lan=0,
+        cs2_root=tmp_path / "cs2",
+        config_root=tmp_path / "config",
+        exec_cfg="all-weapons-dm.cfg",
+        game_type=1,
+        game_mode=2,
+        map_group="mg_active",
+    )
+
+    command = build_launch_command(cfg)
+
+    assert command[command.index("+game_type") + 1] == "1"
+    assert command[command.index("+game_mode") + 1] == "2"
+    assert command[command.index("+mapgroup") + 1] == "mg_active"

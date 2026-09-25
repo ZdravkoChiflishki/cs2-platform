@@ -26,6 +26,9 @@ class ServerConfig:
     cs2_root: Path
     config_root: Path
     exec_cfg: str
+    game_type: int = 0
+    game_mode: int = 0
+    map_group: str = "mg_active"
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> "ServerConfig":
@@ -51,6 +54,9 @@ class ServerConfig:
             cs2_root=Path(values.get("CS2_ROOT", "/home/steam/cs2")),
             config_root=Path(values.get("CONFIG_ROOT", "/opt/cs2-platform/configs")),
             exec_cfg=values.get("EXEC", f"{mode}.cfg"),
+            game_type=_int_env(values, "GAME_TYPE", 0),
+            game_mode=_int_env(values, "GAME_MODE", 0),
+            map_group=values.get("MAP_GROUP", "mg_active"),
         )
 
 
