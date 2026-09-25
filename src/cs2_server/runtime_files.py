@@ -1,7 +1,26 @@
 from __future__ import annotations
 
+import subprocess
 import shutil
 from pathlib import Path
+
+
+def steamcmd_needs_bootstrap(steamcmd_root: Path = Path("/opt/steamcmd")) -> bool:
+    """Return true when SteamCMD has not unpacked its SDK libraries yet."""
+    return not all(
+        (steamcmd_root / platform / "steamclient.so").exists()
+        for platform in ("linux64", "linux32")
+    )
+
+
+def bootstrap_steamcmd(steamcmd_root: Path = Path("/opt/steamcmd")) -> bool:
+    """Run SteamCMD once so linux64/linux32 steamclient.so files exist."""
+    if not steamcmd_needs_bootstrap(steamcmd_root):
+        return False
+    subprocess.run([str(steamcmd_root / "steamcmd.sh"), "+quit"], check=True)
+    if steamcmd_needs_bootstrap(steamcmd_root):
+        raise RuntimeError("SteamCMD bootstrap did not create linux64/linux32 steamclient.so")
+    return True
 
 
 def prepare_steamclient_libraries(steamcmd_root: Path = Path("/opt/steamcmd"), home: Path = Path.home()) -> int:
