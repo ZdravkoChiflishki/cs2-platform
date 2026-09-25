@@ -14,14 +14,14 @@ plugins:
     notes: Minimal first admin/RCON plugin candidate; enabled only after MetaMod/CSSSharp loader stability was verified.
   simpleadmin:
     displayName: SimpleAdmin
-    phase: planned
+    phase: enabled
     loader: counterstrikesharp
-    enabledByDefault: false
-    source: https://github.com/daffyyyy/CS2-SimpleAdmin
-    version: pending-selection
-    sha256: "0000000000000000000000000000000000000000000000000000000000000000"
-    entrypoint: addons/counterstrikesharp/plugins/SimpleAdmin/SimpleAdmin.dll
-    notes: Candidate for minimal admin layer after CSSSharp runtime is staged.
+    enabledByDefault: true
+    source: https://github.com/daffyyyy/CS2-SimpleAdmin/releases/download/build-1.8.2b/CS2-SimpleAdmin-1.8.2b.zip
+    version: "1.8.2b"
+    sha256: "3879f74a000582c407f9795be62f718cb1d512e58ba9c81accf12d691696c201"
+    entrypoint: addons/counterstrikesharp/plugins/CS2-SimpleAdmin/CS2-SimpleAdmin.dll
+    notes: Core admin layer; staged without optional FunCommands/StealthModule folders.
   gamemodemanager:
     displayName: GameModeManager
     phase: planned

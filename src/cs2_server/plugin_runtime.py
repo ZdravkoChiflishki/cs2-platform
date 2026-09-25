@@ -18,6 +18,7 @@ class PluginRuntime:
     csgo_root: Path
     enabled: bool
     admin_steam_ids: tuple[str, ...] = ()
+    admin_flags: tuple[str, ...] = ("@css/rcon",)
 
     def apply(self) -> PluginRuntimePlan:
         if not self.enabled:
@@ -27,7 +28,7 @@ class PluginRuntime:
         copied = _copy_tree(self.source_root, self.csgo_root)
         copied += _normalize_metamod_vdf(self.csgo_root)
         copied += _patch_gameinfo_for_metamod(self.csgo_root)
-        copied += _write_css_admins(self.csgo_root, self.admin_steam_ids)
+        copied += _write_css_admins(self.csgo_root, self.admin_steam_ids, self.admin_flags)
         return PluginRuntimePlan(enabled=True, copied=copied, reason="applied")
 
 
@@ -71,7 +72,7 @@ def _patch_gameinfo_for_metamod(csgo_root: Path) -> int:
     return 1
 
 
-def _write_css_admins(csgo_root: Path, admin_steam_ids: tuple[str, ...]) -> int:
+def _write_css_admins(csgo_root: Path, admin_steam_ids: tuple[str, ...], admin_flags: tuple[str, ...]) -> int:
     if not admin_steam_ids:
         return 0
     path = csgo_root / "addons" / "counterstrikesharp" / "configs" / "admins.json"
@@ -79,7 +80,7 @@ def _write_css_admins(csgo_root: Path, admin_steam_ids: tuple[str, ...]) -> int:
         f"admin-{index + 1}": {
             "identity": steam_id,
             "immunity": 100,
-            "flags": ["@css/rcon"],
+            "flags": list(admin_flags),
         }
         for index, steam_id in enumerate(admin_steam_ids)
     }

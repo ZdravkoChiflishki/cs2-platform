@@ -33,6 +33,7 @@ class ServerConfig:
     plugin_runtime_enabled: bool = False
     plugin_runtime_root: Path = Path("/opt/cs2-platform/plugin-runtime")
     admin_steam_ids: tuple[str, ...] = ()
+    admin_flags: tuple[str, ...] = ("@css/rcon",)
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> "ServerConfig":
@@ -65,6 +66,7 @@ class ServerConfig:
             plugin_runtime_enabled=_bool_env(values, "ENABLE_PLUGIN_RUNTIME", False),
             plugin_runtime_root=Path(values.get("PLUGIN_RUNTIME_ROOT", "/opt/cs2-platform/plugin-runtime")),
             admin_steam_ids=_csv_env(values.get("CS2_ADMIN_STEAM_IDS")),
+            admin_flags=_csv_env(values.get("CS2_ADMIN_FLAGS")) or ("@css/rcon",),
         )
 
 

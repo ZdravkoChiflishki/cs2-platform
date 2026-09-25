@@ -50,6 +50,7 @@ def main() -> int:
         csgo_root=config.cs2_root / "game" / "csgo",
         enabled=config.plugin_runtime_enabled,
         admin_steam_ids=config.admin_steam_ids,
+        admin_flags=config.admin_flags,
     ).apply()
     log("plugin_runtime_checked", enabled=plugin_plan.enabled, copied=plugin_plan.copied, reason=plugin_plan.reason)
 

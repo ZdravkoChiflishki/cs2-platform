@@ -66,6 +66,8 @@ spec:
               value: "true"
             - name: CS2_ADMIN_STEAM_IDS
               value: "76561199127257988"
+            - name: CS2_ADMIN_FLAGS
+              value: "@css/rcon,@css/root"
             - name: RCON_PASSWORD
               valueFrom:
                 secretKeyRef:
