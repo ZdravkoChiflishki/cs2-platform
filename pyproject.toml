@@ -23,6 +23,7 @@ cs2-query-server = "cs2_tools.query_server:main"
 cs2-smoke = "cs2_tools.smoke:main"
 cs2-generate-server = "cs2_tools.server_generator:main"
 cs2-validate-plugins = "cs2_tools.plugin_manifest:main"
+cs2-production-check = "cs2_tools.production_check:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
