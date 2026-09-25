@@ -4,14 +4,6 @@ metadata:
   name: cs2-update-checker
   namespace: cs2-servers
 ---
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: cs2-version-tracker
-  namespace: cs2-servers
-data:
-  required_version: "0"
----
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -77,7 +69,9 @@ spec:
                     exit 1
                   fi
 
-                  LAST_VERSION="$(kubectl get configmap "$TRACKER" -n "$NAMESPACE" -o jsonpath='{.data.required_version}' 2>/dev/null || echo 0)"
+                  kubectl get configmap "$TRACKER" -n "$NAMESPACE" >/dev/null 2>&1 || \
+                    kubectl create configmap "$TRACKER" -n "$NAMESPACE" --from-literal=required_version=0
+                  LAST_VERSION="$(kubectl get configmap "$TRACKER" -n "$NAMESPACE" -o jsonpath='{.data.required_version}')"
                   if [ "$REQUIRED_VERSION" = "$LAST_VERSION" ]; then
                     echo "CS2 required_version $REQUIRED_VERSION already handled"
                     exit 0

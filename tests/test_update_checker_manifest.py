@@ -27,6 +27,13 @@ def test_update_checker_restarts_staging_deployment_on_new_valve_version():
     assert "kubectl rollout restart" in script
     assert "kubectl rollout status" in script
     assert "cs2-version-tracker" in script
+    assert "kubectl create configmap" in script
+
+
+def test_update_checker_does_not_gitops_manage_tracker_value():
+    docs = load_yaml_documents(ROOT / "k8s" / "base" / "update-checker.yaml")
+
+    assert not any(doc["kind"] == "ConfigMap" and doc["metadata"]["name"] == "cs2-version-tracker" for doc in docs)
 
 
 def test_update_checker_rbac_can_patch_deployments_and_configmaps():
