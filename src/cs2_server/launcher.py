@@ -15,6 +15,8 @@ def build_launch_command(config: ServerConfig) -> list[str]:
         str(config.tickrate),
         "-port",
         str(config.port),
+        "-maxplayers_override",
+        str(config.maxplayers),
         "+map",
         config.map,
         "+sv_visiblemaxplayers",

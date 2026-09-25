@@ -25,6 +25,31 @@ MVP uses a per-server `local-path` PVC. The PVC should not be deleted during nor
 
 Phase 2 should introduce a node-local CS2 cache and updater Job per node.
 
+## Deploy workflow
+
+Normal development flow is Git plus Argo Workflows, not local Docker push:
+
+```bash
+git commit
+git push origin main
+kubectl -n argo-workflows create -f - <<'EOF'
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: cs2-platform-build-deploy-
+  namespace: argo-workflows
+spec:
+  workflowTemplateRef:
+    name: cs2-platform-build-deploy
+  arguments:
+    parameters:
+      - name: dry-run
+        value: "false"
+EOF
+```
+
+The workflow builds `zizobg/cs2-server`, pushes the image, commits the pinned digest to `homelab-gitops`, and ArgoCD deploys `Application/cs2-platform`.
+
 ## Crash triage
 
 1. Check pod restart count.

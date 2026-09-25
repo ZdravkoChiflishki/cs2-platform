@@ -101,6 +101,8 @@ def test_build_launch_command_preserves_explicit_values(tmp_path):
     assert command[0] == str(tmp_path / "cs2" / "game" / "bin" / "linuxsteamrt64" / "cs2")
     assert "-dedicated" in command
     assert command[command.index("-port") + 1] == "26001"
+    assert command[command.index("-maxplayers_override") + 1] == "24"
+    assert command[command.index("+sv_visiblemaxplayers") + 1] == "24"
     assert command[command.index("+map") + 1] == "de_mirage"
     assert command[command.index("+exec") + 1] == "multicfg.cfg"
     assert command[command.index("+sv_setsteamaccount") + 1] == "steam-token"
