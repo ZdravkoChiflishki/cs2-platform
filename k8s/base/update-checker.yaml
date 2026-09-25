@@ -58,7 +58,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: update-checker
-              image: bitnami/kubectl:1.35
+              image: bitnami/kubectl:latest
               imagePullPolicy: IfNotPresent
               command: ["/bin/bash", "-c"]
               args:
