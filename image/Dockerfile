@@ -45,29 +45,29 @@ RUN mkdir -p /opt/cs2-platform/plugin-runtime /tmp/cs2-plugin-runtime \
     && tar -xzf /tmp/cs2-plugin-runtime/metamod.tar.gz -C /opt/cs2-platform/plugin-runtime \
     && curl -fsSL "$CSSHARP_URL" -o /tmp/cs2-plugin-runtime/counterstrikesharp.zip \
     && echo "$CSSHARP_SHA256  /tmp/cs2-plugin-runtime/counterstrikesharp.zip" | sha256sum -c - \
-    && unzip -q /tmp/cs2-plugin-runtime/counterstrikesharp.zip -d /opt/cs2-platform/plugin-runtime \
+    && unzip -oq /tmp/cs2-plugin-runtime/counterstrikesharp.zip -d /opt/cs2-platform/plugin-runtime \
     && curl -fsSL "$CS2RCON_URL" -o /tmp/cs2-plugin-runtime/cs2rcon.zip \
     && echo "$CS2RCON_SHA256  /tmp/cs2-plugin-runtime/cs2rcon.zip" | sha256sum -c - \
-    && unzip -q /tmp/cs2-plugin-runtime/cs2rcon.zip -d /tmp/cs2-plugin-runtime/cs2rcon \
+    && unzip -oq /tmp/cs2-plugin-runtime/cs2rcon.zip -d /tmp/cs2-plugin-runtime/cs2rcon \
     && cp -a /tmp/cs2-plugin-runtime/cs2rcon/CS2Rcon-1.2.0/addons /opt/cs2-platform/plugin-runtime/ \
     && curl -fsSL "$SIMPLEADMIN_URL" -o /tmp/cs2-plugin-runtime/simpleadmin.zip \
     && echo "$SIMPLEADMIN_SHA256  /tmp/cs2-plugin-runtime/simpleadmin.zip" | sha256sum -c - \
-    && unzip -q /tmp/cs2-plugin-runtime/simpleadmin.zip -d /tmp/cs2-plugin-runtime/simpleadmin \
+    && unzip -oq /tmp/cs2-plugin-runtime/simpleadmin.zip -d /tmp/cs2-plugin-runtime/simpleadmin \
     && mkdir -p /opt/cs2-platform/plugin-runtime/addons/counterstrikesharp/plugins /opt/cs2-platform/plugin-runtime/addons/counterstrikesharp/shared \
     && cp -a /tmp/cs2-plugin-runtime/simpleadmin/counterstrikesharp/plugins/CS2-SimpleAdmin /opt/cs2-platform/plugin-runtime/addons/counterstrikesharp/plugins/ \
     && cp -a /tmp/cs2-plugin-runtime/simpleadmin/counterstrikesharp/shared/CS2-SimpleAdminApi /opt/cs2-platform/plugin-runtime/addons/counterstrikesharp/shared/ \
     && curl -fsSL "$MENUMANAGER_URL" -o /tmp/cs2-plugin-runtime/menumanager.zip \
     && echo "$MENUMANAGER_SHA256  /tmp/cs2-plugin-runtime/menumanager.zip" | sha256sum -c - \
-    && unzip -q /tmp/cs2-plugin-runtime/menumanager.zip -d /opt/cs2-platform/plugin-runtime \
+    && unzip -oq /tmp/cs2-plugin-runtime/menumanager.zip -d /opt/cs2-platform/plugin-runtime \
     && curl -fsSL "$PLAYERSETTINGS_URL" -o /tmp/cs2-plugin-runtime/playersettings.zip \
     && echo "$PLAYERSETTINGS_SHA256  /tmp/cs2-plugin-runtime/playersettings.zip" | sha256sum -c - \
-    && unzip -q /tmp/cs2-plugin-runtime/playersettings.zip -d /opt/cs2-platform/plugin-runtime \
+    && unzip -oq /tmp/cs2-plugin-runtime/playersettings.zip -d /opt/cs2-platform/plugin-runtime \
     && curl -fsSL "$ANYBASELIB_URL" -o /tmp/cs2-plugin-runtime/anybaselib.zip \
     && echo "$ANYBASELIB_SHA256  /tmp/cs2-plugin-runtime/anybaselib.zip" | sha256sum -c - \
-    && unzip -q /tmp/cs2-plugin-runtime/anybaselib.zip -d /opt/cs2-platform/plugin-runtime \
+    && unzip -oq /tmp/cs2-plugin-runtime/anybaselib.zip -d /opt/cs2-platform/plugin-runtime \
     && curl -fsSL "$GAMEMODEMANAGER_URL" -o /tmp/cs2-plugin-runtime/gamemodemanager.zip \
     && echo "$GAMEMODEMANAGER_SHA256  /tmp/cs2-plugin-runtime/gamemodemanager.zip" | sha256sum -c - \
-    && unzip -q /tmp/cs2-plugin-runtime/gamemodemanager.zip -d /opt/cs2-platform/plugin-runtime \
+    && unzip -oq /tmp/cs2-plugin-runtime/gamemodemanager.zip -d /opt/cs2-platform/plugin-runtime \
     && rm -rf /tmp/cs2-plugin-runtime
 
 RUN useradd --create-home --home-dir /home/steam --shell /bin/bash steam
