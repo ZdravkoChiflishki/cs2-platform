@@ -30,6 +30,12 @@ ARG CS2RCON_URL=https://github.com/LordFetznschaedl/CS2Rcon/releases/download/1.
 ARG CS2RCON_SHA256=311425a06d7a4af980c6dfab188b8b60a598c2edae1fa33828bcb25b47b85639
 ARG SIMPLEADMIN_URL=https://github.com/daffyyyy/CS2-SimpleAdmin/releases/download/build-1.8.2b/CS2-SimpleAdmin-1.8.2b.zip
 ARG SIMPLEADMIN_SHA256=3879f74a000582c407f9795be62f718cb1d512e58ba9c81accf12d691696c201
+ARG MENUMANAGER_URL=https://github.com/NickFox007/MenuManagerCS2/releases/download/1.4.1/MenuManager.zip
+ARG MENUMANAGER_SHA256=2ae011c6cebe3ca279d3cb5d15a568f13ae63398be82a98bd65e204a043a13b3
+ARG PLAYERSETTINGS_URL=https://github.com/NickFox007/PlayerSettingsCS2/releases/download/0.9.4/PlayerSettings.zip
+ARG PLAYERSETTINGS_SHA256=6d6645f728dbe07ca37264ab55f228ab4dcb3740cba02c52fbb27ef15faed0ac
+ARG ANYBASELIB_URL=https://github.com/NickFox007/AnyBaseLibCS2/releases/download/0.9.4/AnyBaseLib.zip
+ARG ANYBASELIB_SHA256=ab3190f43d7afc95d609bbb755279552fba0283ce0a2681c371601a4bd7867ff
 
 RUN mkdir -p /opt/cs2-platform/plugin-runtime /tmp/cs2-plugin-runtime \
     && curl -fsSL "$METAMOD_URL" -o /tmp/cs2-plugin-runtime/metamod.tar.gz \
@@ -48,6 +54,15 @@ RUN mkdir -p /opt/cs2-platform/plugin-runtime /tmp/cs2-plugin-runtime \
     && mkdir -p /opt/cs2-platform/plugin-runtime/addons/counterstrikesharp/plugins /opt/cs2-platform/plugin-runtime/addons/counterstrikesharp/shared \
     && cp -a /tmp/cs2-plugin-runtime/simpleadmin/counterstrikesharp/plugins/CS2-SimpleAdmin /opt/cs2-platform/plugin-runtime/addons/counterstrikesharp/plugins/ \
     && cp -a /tmp/cs2-plugin-runtime/simpleadmin/counterstrikesharp/shared/CS2-SimpleAdminApi /opt/cs2-platform/plugin-runtime/addons/counterstrikesharp/shared/ \
+    && curl -fsSL "$MENUMANAGER_URL" -o /tmp/cs2-plugin-runtime/menumanager.zip \
+    && echo "$MENUMANAGER_SHA256  /tmp/cs2-plugin-runtime/menumanager.zip" | sha256sum -c - \
+    && unzip -q /tmp/cs2-plugin-runtime/menumanager.zip -d /opt/cs2-platform/plugin-runtime \
+    && curl -fsSL "$PLAYERSETTINGS_URL" -o /tmp/cs2-plugin-runtime/playersettings.zip \
+    && echo "$PLAYERSETTINGS_SHA256  /tmp/cs2-plugin-runtime/playersettings.zip" | sha256sum -c - \
+    && unzip -q /tmp/cs2-plugin-runtime/playersettings.zip -d /opt/cs2-platform/plugin-runtime \
+    && curl -fsSL "$ANYBASELIB_URL" -o /tmp/cs2-plugin-runtime/anybaselib.zip \
+    && echo "$ANYBASELIB_SHA256  /tmp/cs2-plugin-runtime/anybaselib.zip" | sha256sum -c - \
+    && unzip -q /tmp/cs2-plugin-runtime/anybaselib.zip -d /opt/cs2-platform/plugin-runtime \
     && rm -rf /tmp/cs2-plugin-runtime
 
 RUN useradd --create-home --home-dir /home/steam --shell /bin/bash steam

@@ -22,6 +22,36 @@ plugins:
     sha256: "3879f74a000582c407f9795be62f718cb1d512e58ba9c81accf12d691696c201"
     entrypoint: addons/counterstrikesharp/plugins/CS2-SimpleAdmin/CS2-SimpleAdmin.dll
     notes: Core admin layer; staged without optional FunCommands/StealthModule folders.
+  menumanager:
+    displayName: MenuManagerCore
+    phase: enabled
+    loader: counterstrikesharp
+    enabledByDefault: true
+    source: https://github.com/NickFox007/MenuManagerCS2/releases/download/1.4.1/MenuManager.zip
+    version: "1.4.1"
+    sha256: "2ae011c6cebe3ca279d3cb5d15a568f13ae63398be82a98bd65e204a043a13b3"
+    entrypoint: addons/counterstrikesharp/plugins/MenuManagerCore/MenuManagerCore.dll
+    notes: Required dependency for CS2-SimpleAdmin.
+  playersettings:
+    displayName: PlayerSettings
+    phase: enabled
+    loader: counterstrikesharp
+    enabledByDefault: true
+    source: https://github.com/NickFox007/PlayerSettingsCS2/releases/download/0.9.4/PlayerSettings.zip
+    version: "0.9.4"
+    sha256: "6d6645f728dbe07ca37264ab55f228ab4dcb3740cba02c52fbb27ef15faed0ac"
+    entrypoint: addons/counterstrikesharp/plugins/PlayerSettings/PlayerSettings.dll
+    notes: Required dependency for CS2-SimpleAdmin/MenuManager.
+  anybaselib:
+    displayName: AnyBaseLib
+    phase: enabled
+    loader: counterstrikesharp
+    enabledByDefault: true
+    source: https://github.com/NickFox007/AnyBaseLibCS2/releases/download/0.9.4/AnyBaseLib.zip
+    version: "0.9.4"
+    sha256: "ab3190f43d7afc95d609bbb755279552fba0283ce0a2681c371601a4bd7867ff"
+    entrypoint: addons/counterstrikesharp/shared/AnyBaseLib/AnyBaseLib.dll
+    notes: Shared library dependency for PlayerSettings and SimpleAdmin stack.
   gamemodemanager:
     displayName: GameModeManager
     phase: planned
