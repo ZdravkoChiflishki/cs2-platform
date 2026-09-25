@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from .config import ServerConfig
 from .launcher import build_launch_command
 from .overlay import OverlayPlan
-from .runtime_files import prepare_server_libraries
+from .runtime_files import prepare_server_libraries, prepare_steamclient_libraries
 from .steam import SteamInstall
 
 
@@ -26,6 +26,9 @@ def main() -> int:
     steam = SteamInstall(config.cs2_root)
     steam_plan = steam.ensure_updated()
     log("steam_update_checked", reason=steam_plan.reason, run_update=steam_plan.run_update, repaired=steam_plan.repair_stale_manifest)
+
+    copied_steamclients = prepare_steamclient_libraries()
+    log("steamclient_libraries_prepared", copied=copied_steamclients)
 
     copied_libraries = prepare_server_libraries(config.cs2_root)
     log("server_libraries_prepared", copied=copied_libraries)

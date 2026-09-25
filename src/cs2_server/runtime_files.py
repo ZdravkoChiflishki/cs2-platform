@@ -4,6 +4,22 @@ import shutil
 from pathlib import Path
 
 
+def prepare_steamclient_libraries(steamcmd_root: Path = Path("/opt/steamcmd"), home: Path = Path.home()) -> int:
+    """Install SteamCMD steamclient.so files where CS2 expects them."""
+    copies = [
+        (steamcmd_root / "linux64" / "steamclient.so", home / ".steam" / "sdk64" / "steamclient.so"),
+        (steamcmd_root / "linux32" / "steamclient.so", home / ".steam" / "sdk32" / "steamclient.so"),
+    ]
+    copied = 0
+    for source, target in copies:
+        if not source.exists():
+            continue
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
+        copied += 1
+    return copied
+
+
 def prepare_server_libraries(cs2_root: Path) -> int:
     """Copy CS2 engine shared libraries where libserver.so expects them.
 
