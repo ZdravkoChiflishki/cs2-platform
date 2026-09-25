@@ -21,10 +21,10 @@ def test_plugin_runtime_copies_metamod_and_counterstrikesharp_files(tmp_path):
     runtime = PluginRuntime(source_root=source, csgo_root=csgo, enabled=True)
     plan = runtime.apply()
 
-    assert plan == PluginRuntimePlan(enabled=True, copied=3, reason="applied")
+    assert plan == PluginRuntimePlan(enabled=True, copied=4, reason="applied")
     assert (csgo / "addons" / "metamod" / "metaplugins.ini").read_text() == "plugins"
     assert (csgo / "addons" / "counterstrikesharp" / "bin" / "linuxsteamrt64" / "counterstrikesharp.so").read_text() == "so"
-    assert (csgo / "addons" / "metamod_x64.vdf").read_text() == "vdf"
+    assert '"addons/metamod/bin/server"' in (csgo / "addons" / "metamod_x64.vdf").read_text()
 
 
 def test_plugin_runtime_fails_when_enabled_but_missing(tmp_path):
