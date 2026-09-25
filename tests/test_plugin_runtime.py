@@ -17,14 +17,19 @@ def test_plugin_runtime_copies_metamod_and_counterstrikesharp_files(tmp_path):
     (source / "addons" / "counterstrikesharp" / "bin" / "linuxsteamrt64").mkdir(parents=True)
     (source / "addons" / "counterstrikesharp" / "bin" / "linuxsteamrt64" / "counterstrikesharp.so").write_text("so")
     (source / "addons" / "metamod_x64.vdf").write_text("vdf")
+    csgo.mkdir(parents=True)
+    (csgo / "gameinfo.gi").write_text(
+        '"GameInfo"\n{\n\tFileSystem\n\t{\n\t\tSearchPaths\n\t\t{\n\t\t\tGame_LowViolence\tcsgo_lv // Perfect World content override\n\t\t\tGame\tcsgo\n\t\t}\n\t}\n}\n'
+    )
 
     runtime = PluginRuntime(source_root=source, csgo_root=csgo, enabled=True)
     plan = runtime.apply()
 
-    assert plan == PluginRuntimePlan(enabled=True, copied=4, reason="applied")
+    assert plan == PluginRuntimePlan(enabled=True, copied=5, reason="applied")
     assert (csgo / "addons" / "metamod" / "metaplugins.ini").read_text() == "plugins"
     assert (csgo / "addons" / "counterstrikesharp" / "bin" / "linuxsteamrt64" / "counterstrikesharp.so").read_text() == "so"
     assert '"addons/metamod/bin/server"' in (csgo / "addons" / "metamod_x64.vdf").read_text()
+    assert "Game\tcsgo/addons/metamod" in (csgo / "gameinfo.gi").read_text()
 
 
 def test_plugin_runtime_fails_when_enabled_but_missing(tmp_path):

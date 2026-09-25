@@ -24,6 +24,7 @@ class PluginRuntime:
             return PluginRuntimePlan(enabled=True, copied=0, reason="source_missing")
         copied = _copy_tree(self.source_root, self.csgo_root)
         copied += _normalize_metamod_vdf(self.csgo_root)
+        copied += _patch_gameinfo_for_metamod(self.csgo_root)
         return PluginRuntimePlan(enabled=True, copied=copied, reason="applied")
 
 
@@ -34,6 +35,36 @@ def _normalize_metamod_vdf(csgo_root: Path) -> int:
         return 0
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(desired)
+    return 1
+
+
+def _patch_gameinfo_for_metamod(csgo_root: Path) -> int:
+    path = csgo_root / "gameinfo.gi"
+    marker = "Game\tcsgo/addons/metamod"
+    fallback_marker = "Game    csgo/addons/metamod"
+    if not path.exists():
+        return 0
+    text = path.read_text()
+    if marker in text or fallback_marker in text:
+        return 0
+    lines = text.splitlines(keepends=True)
+    insert_at = None
+    indent = "\t\t\t"
+    for index, line in enumerate(lines):
+        if "Game_LowViolence" in line:
+            insert_at = index + 1
+            indent = line[: len(line) - len(line.lstrip())]
+            break
+    if insert_at is None:
+        for index, line in enumerate(lines):
+            if "SearchPaths" in line:
+                insert_at = index + 2
+                indent = "\t\t\t"
+                break
+    if insert_at is None:
+        return 0
+    lines.insert(insert_at, f"{indent}Game\tcsgo/addons/metamod\n")
+    path.write_text("".join(lines))
     return 1
 
 
