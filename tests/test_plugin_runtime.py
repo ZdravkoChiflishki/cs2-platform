@@ -26,12 +26,15 @@ def test_plugin_runtime_copies_metamod_and_counterstrikesharp_files(tmp_path):
     runtime = PluginRuntime(source_root=source, csgo_root=csgo, enabled=True)
     plan = runtime.apply()
 
-    assert plan == PluginRuntimePlan(enabled=True, copied=6, reason="applied")
+    assert plan == PluginRuntimePlan(enabled=True, copied=7, reason="applied")
     assert (csgo / "addons" / "metamod" / "metaplugins.ini").read_text() == "plugins"
     assert (csgo / "addons" / "counterstrikesharp" / "bin" / "linuxsteamrt64" / "counterstrikesharp.so").read_text() == "so"
     assert '"addons/metamod/bin/server"' in (csgo / "addons" / "metamod_x64.vdf").read_text()
     assert "Game\tcsgo/addons/metamod" in (csgo / "gameinfo.gi").read_text()
     assert '"mg_active"' in (csgo / "gamemodes_server.txt").read_text()
+    gmm_config = csgo / "addons" / "counterstrikesharp" / "configs" / "plugins" / "GameModeManager" / "GameModeManager.json"
+    assert '"MinPlayers": 1' in gmm_config.read_text()
+    assert '"Name": "all-weapons-dm"' in gmm_config.read_text()
 
 
 def test_plugin_runtime_fails_when_enabled_but_missing(tmp_path):
@@ -57,6 +60,6 @@ def test_plugin_runtime_writes_css_admins_for_rcon_permission(tmp_path):
     plan = runtime.apply()
 
     admins = json.loads((csgo / "addons" / "counterstrikesharp" / "configs" / "admins.json").read_text())
-    assert plan.copied == 3
+    assert plan.copied == 4
     assert admins["admin-1"]["identity"] == "76561199127257988"
     assert admins["admin-1"]["flags"] == ["@css/rcon", "@css/root"]

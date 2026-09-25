@@ -30,6 +30,7 @@ class PluginRuntime:
         copied += _patch_gameinfo_for_metamod(self.csgo_root)
         copied += _write_css_admins(self.csgo_root, self.admin_steam_ids, self.admin_flags)
         copied += _write_gamemodes_server(self.csgo_root)
+        copied += _write_gamemode_manager_config(self.csgo_root)
         return PluginRuntimePlan(enabled=True, copied=copied, reason="applied")
 
 
@@ -123,6 +124,70 @@ def _write_gamemodes_server(csgo_root: Path) -> int:
     if path.exists() and path.read_text() == desired:
         return 0
     path.write_text(desired)
+    return 1
+
+
+def _write_gamemode_manager_config(csgo_root: Path) -> int:
+    path = csgo_root / "addons" / "counterstrikesharp" / "configs" / "plugins" / "GameModeManager" / "GameModeManager.json"
+    desired = {
+        "Version": 12,
+        "RTV": {
+            "Enabled": True,
+            "PerMap": False,
+            "HideHud": False,
+            "MinRounds": 1,
+            "MinPlayers": 1,
+            "VoteDuration": 30,
+            "OptionsToShow": 6,
+            "VotePercentage": 51,
+            "OptionsInCoolDown": 2,
+            "EndOfMapVote": True,
+            "IncludeModes": False,
+            "IncludeExtend": False,
+            "MaxExtends": 0,
+            "ExtendTime": 15,
+            "ExtendRounds": 5,
+            "ModePercentage": 40,
+            "EnabledInWarmup": False,
+            "HideHudAfterVote": False,
+            "NominationEnabled": True,
+            "MaxNominationWinners": 1,
+            "ChangeImmediately": False,
+            "TriggerKillsBeforeEnd": 13,
+            "TriggerRoundsBeforeEnd": 2,
+            "TriggerSecondsBeforeEnd": 120,
+        },
+        "Maps": {"Mode": 0, "Delay": 5, "Default": "de_mirage"},
+        "Votes": {"Enabled": False, "Maps": False, "GameModes": False, "GameSettings": False},
+        "Settings": {"Enabled": False, "Folder": "settings"},
+        "Warmup": {"Enabled": False, "Time": 60, "PerMap": False, "Default": None, "List": []},
+        "Commands": {"Map": True, "Maps": True, "Mode": True, "Modes": True, "TimeLeft": True, "TimeLimit": True},
+        "Rotation": {
+            "Enabled": False,
+            "Cycle": 0,
+            "MapGroups": ["mg_active"],
+            "WhenServerEmpty": False,
+            "CustomTimeLimit": 900,
+            "ModeRotation": False,
+            "ModeInterval": 4,
+            "ModeSchedules": False,
+            "Schedule": [],
+        },
+        "GameModes": {
+            "Default": {"Name": "all-weapons-dm", "Config": "all-weapons-dm.cfg", "DefaultMap": "de_mirage", "MapGroups": ["mg_active"]},
+            "MapGroupFile": "gamemodes_server.txt",
+            "List": [
+                {"Name": "all-weapons-dm", "Config": "all-weapons-dm.cfg", "DefaultMap": "de_mirage", "MapGroups": ["mg_active"]},
+                {"Name": "multicfg", "Config": "multicfg.cfg", "DefaultMap": "de_mirage", "MapGroups": ["mg_active"]},
+                {"Name": "retake", "Config": "retake.cfg", "DefaultMap": "de_mirage", "MapGroups": ["mg_active"]},
+            ],
+        },
+    }
+    rendered = "// Managed by cs2-platform.\n" + json.dumps(desired, indent=2, sort_keys=False) + "\n"
+    if path.exists() and path.read_text() == rendered:
+        return 0
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(rendered)
     return 1
 
 
