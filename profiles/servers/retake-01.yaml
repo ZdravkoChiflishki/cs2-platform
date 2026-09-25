@@ -1,0 +1,15 @@
+server_id: retake-01
+namespace: cs2-servers
+mode: retake
+display_name: ZIZO.GG Retake 01
+map: de_mirage
+port: 26002
+public_address: zizogaming.duckdns.org:26002
+node: k0s-slave5
+image: zizobg/cs2-server@sha256:de0d4b8f4a3a86ea4fb5d6c276b10f0e0ac86e06a79c0e822440f06deb3b2f5f
+pvc_size: 120Gi
+cache_root: null
+cpu_request: 1000m
+cpu_limit: 4000m
+memory_request: 2Gi
+memory_limit: 8Gi

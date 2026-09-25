@@ -62,6 +62,7 @@ Detailed runbooks:
 
 - `docs/runbooks/production-rollout.md`
 - `docs/runbooks/add-server.md`
+- `docs/runbooks/server-generator.md`
 - `docs/runbooks/download-cache.md`
 - `docs/runbooks/crash-loop.md`
 - `docs/runbooks/plugin-upgrade.md`
