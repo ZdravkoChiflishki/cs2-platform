@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: staging-mirage-multicfg-01-config
+  namespace: cs2-servers
+data:
+  server.cfg: |
+    hostname "ZIZO.GG Staging Multi-CFG"
+    sv_cheats 0
+    sv_lan 0
+    bot_quota 0
+  multicfg.cfg: |
+    exec server.cfg
+    mp_warmup_end
+    mp_freezetime 0
+    mp_roundtime 60
+    mp_maxrounds 999
+    mp_buy_anywhere 1
+    mp_buytime 9999
+    sv_infinite_ammo 1
+    bot_kick
+    say "ZIZO.GG staging Multi-CFG loaded"

@@ -1,0 +1,105 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: staging-mirage-multicfg-01
+  namespace: cs2-servers
+  labels:
+    app.kubernetes.io/name: cs2-server
+    zizo.gg/server-id: staging-mirage-multicfg-01
+    zizo.gg/mode: multicfg
+    zizo.gg/region: eu
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cs2-server
+      zizo.gg/server-id: staging-mirage-multicfg-01
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cs2-server
+        zizo.gg/server-id: staging-mirage-multicfg-01
+        zizo.gg/mode: multicfg
+        zizo.gg/region: eu
+      annotations:
+        zizo.gg/display-name: "Multi-CFG"
+        zizo.gg/map: "de_mirage"
+        zizo.gg/public-address: "zizogaming.duckdns.org:26001"
+    spec:
+      serviceAccountName: cs2-server
+      nodeSelector:
+        kubernetes.io/hostname: k0s-slave5
+      containers:
+        - name: cs2
+          image: zizobg/cs2-server:dev
+          imagePullPolicy: Always
+          stdin: true
+          tty: true
+          env:
+            - name: SERVER_ID
+              value: staging-mirage-multicfg-01
+            - name: CS2_MODE
+              value: multicfg
+            - name: MAP
+              value: de_mirage
+            - name: PORT
+              value: "26001"
+            - name: MAXPLAYERS
+              value: "24"
+            - name: TICKRATE
+              value: "128"
+            - name: EXEC
+              value: multicfg.cfg
+            - name: CONFIG_ROOT
+              value: /opt/cs2-platform/configs
+            - name: CS2_ROOT
+              value: /home/steam/cs2
+            - name: RCON_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cs2-secrets
+                  key: RCON_PASSWORD
+            - name: STEAM_ACCOUNT
+              valueFrom:
+                secretKeyRef:
+                  name: cs2-secrets
+                  key: STEAM_ACCOUNT
+            - name: API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cs2-secrets
+                  key: API_KEY
+            - name: SERVER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cs2-secrets
+                  key: SERVER_PASSWORD
+                  optional: true
+          ports:
+            - name: game-tcp
+              containerPort: 26001
+              protocol: TCP
+            - name: game-udp
+              containerPort: 26001
+              protocol: UDP
+          volumeMounts:
+            - name: cs2-data
+              mountPath: /home/steam/cs2
+            - name: server-config
+              mountPath: /opt/cs2-platform/configs/servers/staging-mirage-multicfg-01/cfg
+          resources:
+            requests:
+              cpu: "1000m"
+              memory: 2Gi
+            limits:
+              cpu: "4000m"
+              memory: 8Gi
+      volumes:
+        - name: cs2-data
+          persistentVolumeClaim:
+            claimName: staging-mirage-multicfg-01-data
+        - name: server-config
+          configMap:
+            name: staging-mirage-multicfg-01-config

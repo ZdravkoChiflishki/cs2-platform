@@ -1,0 +1,8 @@
+name: multicfg
+displayName: Multi-CFG
+defaultMap: de_mirage
+exec: multicfg.cfg
+maxPlayers: 24
+plugins:
+  enabled:
+    - cs2rcon
