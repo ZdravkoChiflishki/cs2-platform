@@ -47,6 +47,16 @@ Expected before a disruptive action:
 
 Do not force a rollout while human players are connected. If smoke catches drift while players are active, report the drift and wait for approval instead of using `rollout restart`, deleting the pod, or forcing `changelevel`.
 
+The Argo build/deploy workflow also runs the automated A2S disruption guard before any real image build/push:
+
+```bash
+PYTHONPATH=src python -m cs2_tools.disruption_guard \
+  --host 192.168.0.8 \
+  --port 26001
+```
+
+The workflow parameter `allow-active-players` defaults to false. Set it to `"true"` only with explicit operator approval to interrupt the active session.
+
 ## Gate 3: build/deploy through Argo
 
 Commit and push source changes:
@@ -73,6 +83,8 @@ spec:
   arguments:
     parameters:
       - name: dry-run
+        value: "false"
+      - name: allow-active-players
         value: "false"
 EOF
 ```

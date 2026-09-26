@@ -25,6 +25,7 @@ cs2-generate-server = "cs2_tools.server_generator:main"
 cs2-validate-server-profile = "cs2_tools.server_generator:main"
 cs2-validate-plugins = "cs2_tools.plugin_manifest:main"
 cs2-production-check = "cs2_tools.production_check:main"
+cs2-disruption-guard = "cs2_tools.disruption_guard:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
