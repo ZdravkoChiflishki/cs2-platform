@@ -2,9 +2,9 @@ from cs2_tools.smoke import SmokeCheck, evaluate_server_info, evaluate_logs
 from cs2_tools.query_server import ServerInfo
 
 
-def test_evaluate_server_info_accepts_expected_capacity_and_bots():
+def test_evaluate_server_info_accepts_expected_capacity_bots_name_and_map():
     info = ServerInfo(
-        name="ZIZO.GG Staging Multi-CFG",
+        name="ZIZO.GG Staging All Weapons DM",
         map="de_mirage",
         folder="csgo",
         game="Counter-Strike 2",
@@ -15,10 +15,16 @@ def test_evaluate_server_info_accepts_expected_capacity_and_bots():
         version="1.41.8.4",
     )
 
-    checks = evaluate_server_info(info, expected_max_players=24, expected_bots=0)
+    checks = evaluate_server_info(
+        info,
+        expected_max_players=24,
+        expected_bots=0,
+        expected_name_contains="All Weapons DM",
+        expected_map="de_mirage",
+    )
 
     assert all(check.ok for check in checks)
-    assert [check.name for check in checks] == ["a2s_online", "max_players", "bots"]
+    assert [check.name for check in checks] == ["a2s_online", "server_name", "map", "max_players", "bots"]
 
 
 def test_evaluate_server_info_reports_mismatch():
@@ -34,8 +40,16 @@ def test_evaluate_server_info_reports_mismatch():
         version="1.41.8.4",
     )
 
-    checks = evaluate_server_info(info, expected_max_players=24, expected_bots=0)
+    checks = evaluate_server_info(
+        info,
+        expected_max_players=24,
+        expected_bots=0,
+        expected_name_contains="All Weapons DM",
+        expected_map="de_dust2",
+    )
 
+    assert SmokeCheck("server_name", False, "expected substring All Weapons DM, got ZIZO.GG Staging Multi-CFG") in checks
+    assert SmokeCheck("map", False, "expected de_dust2, got de_mirage") in checks
     assert SmokeCheck("max_players", False, "expected 24, got 20") in checks
     assert SmokeCheck("bots", False, "expected 0, got 3") in checks
 

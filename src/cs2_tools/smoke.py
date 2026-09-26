@@ -15,16 +15,36 @@ class SmokeCheck:
     detail: str
 
 
-def evaluate_server_info(info: ServerInfo, *, expected_max_players: int, expected_bots: int) -> list[SmokeCheck]:
-    return [
-        SmokeCheck("a2s_online", True, f"{info.name} {info.map} {info.players}/{info.max_players}"),
-        SmokeCheck(
-            "max_players",
-            info.max_players == expected_max_players,
-            f"expected {expected_max_players}, got {info.max_players}",
-        ),
-        SmokeCheck("bots", info.bots == expected_bots, f"expected {expected_bots}, got {info.bots}"),
-    ]
+def evaluate_server_info(
+    info: ServerInfo,
+    *,
+    expected_max_players: int,
+    expected_bots: int,
+    expected_name_contains: str | None = None,
+    expected_map: str | None = None,
+) -> list[SmokeCheck]:
+    checks = [SmokeCheck("a2s_online", True, f"{info.name} {info.map} {info.players}/{info.max_players}")]
+    if expected_name_contains is not None:
+        checks.append(
+            SmokeCheck(
+                "server_name",
+                expected_name_contains in info.name,
+                f"expected substring {expected_name_contains}, got {info.name}",
+            )
+        )
+    if expected_map is not None:
+        checks.append(SmokeCheck("map", info.map == expected_map, f"expected {expected_map}, got {info.map}"))
+    checks.extend(
+        [
+            SmokeCheck(
+                "max_players",
+                info.max_players == expected_max_players,
+                f"expected {expected_max_players}, got {info.max_players}",
+            ),
+            SmokeCheck("bots", info.bots == expected_bots, f"expected {expected_bots}, got {info.bots}"),
+        ]
+    )
+    return checks
 
 
 def run_kubectl_check(namespace: str, selector: str, deployment: str) -> list[SmokeCheck]:
@@ -79,10 +99,18 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--deployment", default="staging-mirage-multicfg-01")
     parser.add_argument("--expected-max-players", type=int, default=24)
     parser.add_argument("--expected-bots", type=int, default=0)
+    parser.add_argument("--expected-name-contains")
+    parser.add_argument("--expected-map")
     args = parser.parse_args(argv)
 
     info = query_a2s_info(args.host, args.port)
-    checks = evaluate_server_info(info, expected_max_players=args.expected_max_players, expected_bots=args.expected_bots)
+    checks = evaluate_server_info(
+        info,
+        expected_max_players=args.expected_max_players,
+        expected_bots=args.expected_bots,
+        expected_name_contains=args.expected_name_contains,
+        expected_map=args.expected_map,
+    )
     checks.extend(run_kubectl_check(args.namespace, args.selector, args.deployment))
     payload = {"server": info.to_dict(), "checks": [asdict(check) for check in checks], "ok": all(check.ok for check in checks)}
     print(json.dumps(payload, indent=2, sort_keys=True))

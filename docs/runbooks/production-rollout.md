@@ -86,7 +86,11 @@ rollout successful
 ## Gate 4: smoke check
 
 ```bash
-PYTHONPATH=src python -m cs2_tools.smoke
+PYTHONPATH=src python -m cs2_tools.smoke \
+  --expected-name-contains "All Weapons DM" \
+  --expected-map de_mirage \
+  --expected-max-players 24 \
+  --expected-bots 0
 ```
 
 Expected:
