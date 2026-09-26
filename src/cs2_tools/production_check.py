@@ -41,6 +41,7 @@ def run_production_checks(root: Path = Path(".")) -> list[ProductionCheck]:
     checks.append(ProductionCheck("image_pinned", bool(PINNED_IMAGE_RE.match(image)), image or "missing image"))
     checks.append(ProductionCheck("steam_update_policy", env.get("STEAM_UPDATE_POLICY") == "always", env.get("STEAM_UPDATE_POLICY", "missing")))
     checks.append(ProductionCheck("plugin_runtime_enabled", env.get("ENABLE_PLUGIN_RUNTIME") == "true", env.get("ENABLE_PLUGIN_RUNTIME", "missing")))
+    checks.append(_service_port_check(root, deployment, env))
 
     mode_name = env.get("CS2_MODE", "")
     mode_path = root / "configs" / "modes" / mode_name / "mode.yaml"
@@ -101,6 +102,33 @@ def _load_yaml(path: Path) -> dict[str, Any]:
 
 def _env_map(env: list[dict[str, Any]]) -> dict[str, str]:
     return {str(item["name"]): str(item.get("value", "")) for item in env if "name" in item and "value" in item}
+
+
+def _service_port_check(root: Path, deployment: dict[str, Any], env: dict[str, str]) -> ProductionCheck:
+    service = _load_yaml(root / "k8s" / "servers" / "staging-mirage-multicfg-01-service.yaml")
+    service_ports = {str(port.get("name", "")): str(port.get("port", "")) for port in service.get("spec", {}).get("ports", [])}
+    env_port = env.get("PORT", "")
+    public_address = str(
+        deployment.get("spec", {})
+        .get("template", {})
+        .get("metadata", {})
+        .get("annotations", {})
+        .get("zizo.gg/public-address", "")
+    )
+    public_port = _extract_public_port(public_address)
+    tcp_port = service_ports.get("game-tcp", "missing")
+    udp_port = service_ports.get("game-udp", "missing")
+    detail = f"env={env_port} public={public_port} service_tcp={tcp_port} service_udp={udp_port}"
+    return ProductionCheck(
+        "service_port_matches_deployment",
+        bool(env_port) and env_port == public_port == tcp_port == udp_port,
+        detail,
+    )
+
+
+def _extract_public_port(public_address: str) -> str:
+    match = re.search(r":(\d{1,5})$", public_address)
+    return match.group(1) if match else "missing"
 
 
 def _csv_join(values: list[Any]) -> str:

@@ -16,6 +16,7 @@ def write_minimal_repo(root: Path) -> None:
         "  - base/update-checker.yaml\n"
         "  - servers/staging-mirage-multicfg-01-configmap.yaml\n"
         "  - servers/staging-mirage-multicfg-01-deployment.yaml\n"
+        "  - servers/staging-mirage-multicfg-01-service.yaml\n"
     )
     (root / "k8s" / "base" / "update-checker.yaml").write_text(
         yaml.safe_dump(
@@ -45,6 +46,7 @@ def write_minimal_repo(root: Path) -> None:
                     "annotations": {
                         "zizo.gg/display-name": "All Weapons DM",
                         "zizo.gg/map": "de_mirage",
+                        "zizo.gg/public-address": "zizogaming.duckdns.org:26001",
                     }
                 },
                 "spec": {
@@ -55,6 +57,7 @@ def write_minimal_repo(root: Path) -> None:
                             "env": [
                                 {"name": "CS2_MODE", "value": "all-weapons-dm"},
                                 {"name": "MAP", "value": "de_mirage"},
+                                {"name": "PORT", "value": "26001"},
                                 {"name": "MAP_GROUP", "value": "mg_dm"},
                                 {"name": "STEAM_UPDATE_POLICY", "value": "always"},
                                 {"name": "ENABLE_PLUGIN_RUNTIME", "value": "true"},
@@ -67,6 +70,20 @@ def write_minimal_repo(root: Path) -> None:
         },
     }
     (root / "k8s" / "servers" / "staging-mirage-multicfg-01-deployment.yaml").write_text(yaml.safe_dump(deployment, sort_keys=False))
+    service = {
+        "apiVersion": "v1",
+        "kind": "Service",
+        "metadata": {"name": "staging-mirage-multicfg-01", "namespace": "cs2-servers"},
+        "spec": {
+            "type": "LoadBalancer",
+            "externalTrafficPolicy": "Local",
+            "ports": [
+                {"name": "game-tcp", "port": 26001, "targetPort": "game-tcp", "protocol": "TCP"},
+                {"name": "game-udp", "port": 26001, "targetPort": "game-udp", "protocol": "UDP"},
+            ],
+        },
+    }
+    (root / "k8s" / "servers" / "staging-mirage-multicfg-01-service.yaml").write_text(yaml.safe_dump(service, sort_keys=False))
     (root / "configs" / "modes" / "all-weapons-dm" / "mode.yaml").write_text(
         "name: all-weapons-dm\n"
         "displayName: All Weapons DM\n"
@@ -94,6 +111,7 @@ def test_production_checks_pass_for_minimal_ready_repo(tmp_path):
     assert ProductionCheck("disabled_plugins_match_mode", True, "deployment=GameModeManager,MenuManagerAPI mode=GameModeManager,MenuManagerAPI") in checks
     assert ProductionCheck("map_matches_mode_default", True, "deployment=de_mirage annotation=de_mirage mode=de_mirage") in checks
     assert ProductionCheck("hostname_contains_mode_display", True, "hostname=ZIZO.GG Staging All Weapons DM mode_display=All Weapons DM") in checks
+    assert ProductionCheck("service_port_matches_deployment", True, "env=26001 public=26001 service_tcp=26001 service_udp=26001") in checks
 
 
 def test_production_checks_fail_when_map_or_hostname_drift_from_mode(tmp_path):
@@ -118,6 +136,24 @@ def test_production_checks_fail_when_map_or_hostname_drift_from_mode(tmp_path):
     assert checks["map_matches_mode_default"].detail == "deployment=cs_office annotation=cs_office mode=de_mirage"
     assert checks["hostname_contains_mode_display"].ok is False
     assert checks["hostname_contains_mode_display"].detail == "hostname=ZIZO.GG Staging Multi-CFG mode_display=All Weapons DM"
+
+def test_production_checks_fail_when_service_or_public_port_drift_from_deployment(tmp_path):
+    write_minimal_repo(tmp_path)
+    service_path = tmp_path / "k8s" / "servers" / "staging-mirage-multicfg-01-service.yaml"
+    service = yaml.safe_load(service_path.read_text())
+    service["spec"]["ports"][0]["port"] = 26002
+    service_path.write_text(yaml.safe_dump(service, sort_keys=False))
+
+    deployment_path = tmp_path / "k8s" / "servers" / "staging-mirage-multicfg-01-deployment.yaml"
+    deployment = yaml.safe_load(deployment_path.read_text())
+    deployment["spec"]["template"]["metadata"]["annotations"]["zizo.gg/public-address"] = "zizogaming.duckdns.org:26003"
+    deployment_path.write_text(yaml.safe_dump(deployment, sort_keys=False))
+
+    checks = {check.name: check for check in run_production_checks(tmp_path)}
+
+    assert checks["service_port_matches_deployment"].ok is False
+    assert checks["service_port_matches_deployment"].detail == "env=26001 public=26003 service_tcp=26002 service_udp=26001"
+
 
 def test_production_checks_fail_when_disabled_plugins_drift_from_mode(tmp_path):
     write_minimal_repo(tmp_path)
