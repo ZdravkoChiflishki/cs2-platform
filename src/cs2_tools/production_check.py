@@ -49,6 +49,26 @@ def run_production_checks(root: Path = Path(".")) -> list[ProductionCheck]:
         expected_group = str(mode.get("mapGroup", ""))
         actual_group = env.get("MAP_GROUP", "")
         checks.append(ProductionCheck("map_group_matches_mode", actual_group == expected_group, f"deployment={actual_group} mode={expected_group}"))
+        expected_map = str(mode.get("defaultMap", ""))
+        actual_map = env.get("MAP", "")
+        annotation_map = str(deployment.get("spec", {}).get("template", {}).get("metadata", {}).get("annotations", {}).get("zizo.gg/map", ""))
+        checks.append(
+            ProductionCheck(
+                "map_matches_mode_default",
+                actual_map == expected_map and annotation_map == expected_map,
+                f"deployment={actual_map} annotation={annotation_map} mode={expected_map}",
+            )
+        )
+        expected_display = str(mode.get("displayName", ""))
+        configmap = _load_yaml(root / "k8s" / "servers" / "staging-mirage-multicfg-01-configmap.yaml")
+        hostname = _extract_hostname(str(configmap.get("data", {}).get("server.cfg", "")))
+        checks.append(
+            ProductionCheck(
+                "hostname_contains_mode_display",
+                bool(expected_display) and expected_display in hostname,
+                f"hostname={hostname} mode_display={expected_display}",
+            )
+        )
         expected_disabled = _csv_join(mode.get("plugins", {}).get("disabledRuntime", []) or [])
         actual_disabled = env.get("CS2_DISABLED_PLUGINS", "")
         checks.append(
@@ -60,6 +80,8 @@ def run_production_checks(root: Path = Path(".")) -> list[ProductionCheck]:
         )
     else:
         checks.append(ProductionCheck("map_group_matches_mode", False, f"missing mode file for {mode_name!r}"))
+        checks.append(ProductionCheck("map_matches_mode_default", False, f"missing mode file for {mode_name!r}"))
+        checks.append(ProductionCheck("hostname_contains_mode_display", False, f"missing mode file for {mode_name!r}"))
         checks.append(ProductionCheck("disabled_plugins_match_mode", False, f"missing mode file for {mode_name!r}"))
 
     if checks[0].ok:
@@ -83,6 +105,18 @@ def _env_map(env: list[dict[str, Any]]) -> dict[str, str]:
 
 def _csv_join(values: list[Any]) -> str:
     return ",".join(str(value).strip() for value in values if str(value).strip())
+
+
+def _extract_hostname(server_cfg: str) -> str:
+    for line in server_cfg.splitlines():
+        stripped = line.strip()
+        if not stripped.startswith("hostname"):
+            continue
+        value = stripped.removeprefix("hostname").strip()
+        if len(value) >= 2 and value[0] == value[-1] == '"':
+            return value[1:-1]
+        return value
+    return "missing"
 
 
 def main(argv: list[str] | None = None) -> int:

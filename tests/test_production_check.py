@@ -14,6 +14,7 @@ def write_minimal_repo(root: Path) -> None:
     (root / "k8s" / "kustomization.yaml").write_text(
         "resources:\n"
         "  - base/update-checker.yaml\n"
+        "  - servers/staging-mirage-multicfg-01-configmap.yaml\n"
         "  - servers/staging-mirage-multicfg-01-deployment.yaml\n"
     )
     (root / "k8s" / "base" / "update-checker.yaml").write_text(
@@ -27,12 +28,25 @@ def write_minimal_repo(root: Path) -> None:
             sort_keys=False,
         )
     )
+    configmap = {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {"name": "staging-mirage-multicfg-01-config", "namespace": "cs2-servers"},
+        "data": {"server.cfg": 'hostname "ZIZO.GG Staging All Weapons DM"\nsv_lan 0\n'},
+    }
+    (root / "k8s" / "servers" / "staging-mirage-multicfg-01-configmap.yaml").write_text(yaml.safe_dump(configmap, sort_keys=False))
     deployment = {
         "apiVersion": "apps/v1",
         "kind": "Deployment",
         "metadata": {"name": "staging-mirage-multicfg-01", "namespace": "cs2-servers"},
         "spec": {
             "template": {
+                "metadata": {
+                    "annotations": {
+                        "zizo.gg/display-name": "All Weapons DM",
+                        "zizo.gg/map": "de_mirage",
+                    }
+                },
                 "spec": {
                     "containers": [
                         {
@@ -40,6 +54,7 @@ def write_minimal_repo(root: Path) -> None:
                             "image": "zizobg/cs2-server@sha256:" + "a" * 64,
                             "env": [
                                 {"name": "CS2_MODE", "value": "all-weapons-dm"},
+                                {"name": "MAP", "value": "de_mirage"},
                                 {"name": "MAP_GROUP", "value": "mg_dm"},
                                 {"name": "STEAM_UPDATE_POLICY", "value": "always"},
                                 {"name": "ENABLE_PLUGIN_RUNTIME", "value": "true"},
@@ -77,7 +92,32 @@ def test_production_checks_pass_for_minimal_ready_repo(tmp_path):
     assert ProductionCheck("image_pinned", True, "zizobg/cs2-server@sha256:" + "a" * 64) in checks
     assert any(check.name == "update_checker_present" and check.ok for check in checks)
     assert ProductionCheck("disabled_plugins_match_mode", True, "deployment=GameModeManager,MenuManagerAPI mode=GameModeManager,MenuManagerAPI") in checks
+    assert ProductionCheck("map_matches_mode_default", True, "deployment=de_mirage annotation=de_mirage mode=de_mirage") in checks
+    assert ProductionCheck("hostname_contains_mode_display", True, "hostname=ZIZO.GG Staging All Weapons DM mode_display=All Weapons DM") in checks
 
+
+def test_production_checks_fail_when_map_or_hostname_drift_from_mode(tmp_path):
+    write_minimal_repo(tmp_path)
+    deployment_path = tmp_path / "k8s" / "servers" / "staging-mirage-multicfg-01-deployment.yaml"
+    deployment = yaml.safe_load(deployment_path.read_text())
+    container = deployment["spec"]["template"]["spec"]["containers"][0]
+    for item in container["env"]:
+        if item["name"] == "MAP":
+            item["value"] = "cs_office"
+    deployment["spec"]["template"]["metadata"]["annotations"]["zizo.gg/map"] = "cs_office"
+    deployment_path.write_text(yaml.safe_dump(deployment, sort_keys=False))
+
+    configmap_path = tmp_path / "k8s" / "servers" / "staging-mirage-multicfg-01-configmap.yaml"
+    configmap = yaml.safe_load(configmap_path.read_text())
+    configmap["data"]["server.cfg"] = 'hostname "ZIZO.GG Staging Multi-CFG"\n'
+    configmap_path.write_text(yaml.safe_dump(configmap, sort_keys=False))
+
+    checks = {check.name: check for check in run_production_checks(tmp_path)}
+
+    assert checks["map_matches_mode_default"].ok is False
+    assert checks["map_matches_mode_default"].detail == "deployment=cs_office annotation=cs_office mode=de_mirage"
+    assert checks["hostname_contains_mode_display"].ok is False
+    assert checks["hostname_contains_mode_display"].detail == "hostname=ZIZO.GG Staging Multi-CFG mode_display=All Weapons DM"
 
 def test_production_checks_fail_when_disabled_plugins_drift_from_mode(tmp_path):
     write_minimal_repo(tmp_path)
