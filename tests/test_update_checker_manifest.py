@@ -26,6 +26,11 @@ def test_update_checker_restarts_staging_deployment_on_new_valve_version():
     assert "deployment/staging-mirage-multicfg-01" in script
     assert "kubectl rollout restart" in script
     assert "kubectl rollout status" in script
+    assert "verify_manifest_ready" in script
+    assert "TargetBuildID" in script
+    assert "pods/exec" not in script
+    assert "buildid and TargetBuildID are ready" in script
+    assert script.index("verify_manifest_ready") < script.index("kubectl patch configmap")
     assert "cs2-version-tracker" in script
     assert "kubectl create configmap" in script
 
@@ -43,6 +48,10 @@ def test_update_checker_rbac_can_patch_deployments_and_configmaps():
 
     deployment_rule = next(rule for rule in rules if rule["resources"] == ["deployments"])
     configmap_rule = next(rule for rule in rules if rule["resources"] == ["configmaps"])
+    pod_rule = next(rule for rule in rules if rule["resources"] == ["pods"])
+    pod_exec_rule = next(rule for rule in rules if rule["resources"] == ["pods/exec"])
 
     assert {"get", "patch", "watch"}.issubset(set(deployment_rule["verbs"]))
     assert {"get", "create", "patch"}.issubset(set(configmap_rule["verbs"]))
+    assert {"get", "list"}.issubset(set(pod_rule["verbs"]))
+    assert {"create"}.issubset(set(pod_exec_rule["verbs"]))

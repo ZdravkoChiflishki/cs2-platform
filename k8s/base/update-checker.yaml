@@ -16,6 +16,12 @@ rules:
   - apiGroups: [""]
     resources: ["configmaps"]
     verbs: ["get", "create", "patch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -63,6 +69,52 @@ spec:
                   TRACKER="cs2-version-tracker"
                   URL="https://api.steampowered.com/ISteamApps/UpToDateCheck/v1/?appid=730&version=0"
 
+                  current_pod() {
+                    kubectl get pod -n "$NAMESPACE" -l "zizo.gg/server-id=$DEPLOYMENT" -o jsonpath='{.items[0].metadata.name}'
+                  }
+
+                  manifest_state() {
+                    local pod="$1"
+                    kubectl exec -n "$NAMESPACE" "$pod" -- bash -lc '
+                      MANIFEST=/home/steam/cs2/steamapps/appmanifest_730.acf
+                      if [ ! -f "$MANIFEST" ]; then
+                        echo "missing:::"
+                        exit 0
+                      fi
+                      BUILD_ID=$(grep -m1 "\"buildid\"" "$MANIFEST" | tr -cd "0-9")
+                      TARGET_BUILD_ID=$(grep -m1 "\"TargetBuildID\"" "$MANIFEST" | tr -cd "0-9")
+                      STATE_FLAGS=$(grep -m1 "\"StateFlags\"" "$MANIFEST" | tr -cd "0-9")
+                      UPDATE_RESULT=$(grep -m1 "\"UpdateResult\"" "$MANIFEST" | tr -cd "0-9")
+                      printf "%s:%s:%s:%s\n" "$BUILD_ID" "$TARGET_BUILD_ID" "$STATE_FLAGS" "$UPDATE_RESULT"
+                    '
+                  }
+
+                  manifest_ready_state() {
+                    local state="$1"
+                    local build_id target_build_id state_flags update_result
+                    IFS=: read -r build_id target_build_id state_flags update_result <<< "$state"
+                    [ -n "$build_id" ] && [ -n "$target_build_id" ] && \
+                      [ "$build_id" != "0" ] && [ "$target_build_id" != "0" ] && \
+                      [ "$build_id" = "$target_build_id" ] && \
+                      [ "$state_flags" = "4" ] && [ "$update_result" = "0" ]
+                  }
+
+                  verify_manifest_ready() {
+                    local pod state
+                    for attempt in $(seq 1 120); do
+                      pod="$(current_pod)"
+                      state="$(manifest_state "$pod")"
+                      echo "manifest state attempt=$attempt pod=$pod state=$state"
+                      if manifest_ready_state "$state"; then
+                        echo "CS2 appmanifest buildid and TargetBuildID are ready: $state"
+                        return 0
+                      fi
+                      sleep 10
+                    done
+                    echo "ERROR: CS2 appmanifest did not become ready" >&2
+                    return 1
+                  }
+
                   REQUIRED_VERSION="$(curl -fsS "$URL" | grep -o '"required_version":[0-9]*' | grep -o '[0-9]*$')"
                   if [ -z "$REQUIRED_VERSION" ]; then
                     echo "ERROR: required_version was empty" >&2
@@ -72,13 +124,26 @@ spec:
                   kubectl get configmap "$TRACKER" -n "$NAMESPACE" >/dev/null 2>&1 || \
                     kubectl create configmap "$TRACKER" -n "$NAMESPACE" --from-literal=required_version=0
                   LAST_VERSION="$(kubectl get configmap "$TRACKER" -n "$NAMESPACE" -o jsonpath='{.data.required_version}')"
-                  if [ "$REQUIRED_VERSION" = "$LAST_VERSION" ]; then
-                    echo "CS2 required_version $REQUIRED_VERSION already handled"
-                    exit 0
+
+                  NEEDS_ROLLOUT="false"
+                  if [ "$REQUIRED_VERSION" != "$LAST_VERSION" ]; then
+                    echo "CS2 required_version changed: $LAST_VERSION -> $REQUIRED_VERSION"
+                    NEEDS_ROLLOUT="true"
+                  else
+                    POD="$(current_pod)"
+                    STATE="$(manifest_state "$POD")"
+                    if manifest_ready_state "$STATE"; then
+                      echo "CS2 required_version $REQUIRED_VERSION already handled and manifest is ready: $STATE"
+                      exit 0
+                    fi
+                    echo "CS2 required_version $REQUIRED_VERSION already tracked, but manifest is not ready: $STATE"
+                    NEEDS_ROLLOUT="true"
                   fi
 
-                  echo "CS2 required_version changed: $LAST_VERSION -> $REQUIRED_VERSION"
-                  kubectl rollout restart -n "$NAMESPACE" "$DEPLOYMENT_RESOURCE"
-                  kubectl rollout status -n "$NAMESPACE" "$DEPLOYMENT_RESOURCE" --timeout=180m
-                  kubectl patch configmap "$TRACKER" -n "$NAMESPACE" --type merge -p "{\"data\":{\"required_version\":\"$REQUIRED_VERSION\"}}"
-                  echo "CS2 update rollout completed for required_version $REQUIRED_VERSION"
+                  if [ "$NEEDS_ROLLOUT" = "true" ]; then
+                    kubectl rollout restart -n "$NAMESPACE" "$DEPLOYMENT_RESOURCE"
+                    kubectl rollout status -n "$NAMESPACE" "$DEPLOYMENT_RESOURCE" --timeout=180m
+                    verify_manifest_ready
+                    kubectl patch configmap "$TRACKER" -n "$NAMESPACE" --type merge -p "{\"data\":{\"required_version\":\"$REQUIRED_VERSION\"}}"
+                    echo "CS2 update rollout completed for required_version $REQUIRED_VERSION"
+                  fi
