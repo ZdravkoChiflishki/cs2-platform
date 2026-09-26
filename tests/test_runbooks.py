@@ -29,6 +29,14 @@ def test_production_rollout_documents_automated_disruption_guard_override():
     assert "defaults to false" in runbook
 
 
+def test_production_rollout_documents_update_checker_hardening_gate():
+    runbook = (ROOT / "docs" / "runbooks" / "production-rollout.md").read_text()
+
+    assert "update_checker_hardened" in runbook
+    assert "rollout waits for ready appmanifest before tracker patch" in runbook
+    assert "pods/exec" in runbook
+
+
 def test_server_generator_documents_platform_managed_security_context():
     runbook = (ROOT / "docs" / "runbooks" / "server-generator.md").read_text()
 

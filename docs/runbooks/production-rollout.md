@@ -140,7 +140,7 @@ no_fatal_logs: none
 
 ## Gate 6: updater health check
 
-The update checker must not mark a Valve `required_version` handled until the live Steam appmanifest is healthy.
+The update checker must not mark a Valve `required_version` handled until the live Steam appmanifest is healthy. `production_check` must include `update_checker_hardened: rollout waits for ready appmanifest before tracker patch`, and the checker RBAC must include `deployments.watch` plus `pods/exec` create so rollout waiting and live appmanifest verification actually work.
 
 ```bash
 JOB=cs2-update-checker-manual-$(date +%s)

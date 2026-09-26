@@ -93,14 +93,62 @@ def run_production_checks(root: Path = Path(".")) -> list[ProductionCheck]:
         cronjob = next((doc for doc in update_checker_docs if doc and doc.get("kind") == "CronJob"), None)
         schedule = cronjob.get("spec", {}).get("schedule", "") if cronjob else "missing"
         checks.append(ProductionCheck("update_checker_schedule", schedule == "*/15 * * * *", str(schedule)))
+        checks.append(_update_checker_hardened_check(update_checker_docs))
     else:
         checks.append(ProductionCheck("update_checker_schedule", False, "update checker missing"))
+        checks.append(ProductionCheck("update_checker_hardened", False, "update checker missing"))
 
     return checks
 
 
 def _load_yaml(path: Path) -> dict[str, Any]:
     return yaml.safe_load(path.read_text()) or {}
+
+
+def _update_checker_hardened_check(docs: list[dict[str, Any] | None]) -> ProductionCheck:
+    cronjob = next((doc for doc in docs if doc and doc.get("kind") == "CronJob"), None)
+    role = next((doc for doc in docs if doc and doc.get("kind") == "Role"), None)
+    missing: list[str] = []
+
+    if not cronjob:
+        missing.append("CronJob")
+        script = ""
+        backoff_limit = "missing"
+    else:
+        job_spec = cronjob.get("spec", {}).get("jobTemplate", {}).get("spec", {}) or {}
+        backoff_limit = job_spec.get("backoffLimit", "missing")
+        if backoff_limit != 0:
+            missing.append("backoffLimit=0")
+        containers = job_spec.get("template", {}).get("spec", {}).get("containers", []) or []
+        script = str((containers[0].get("args", []) or [""])[0]) if containers else ""
+
+    if not re.search(r"\n\s*verify_manifest_ready\s*\n\s*kubectl patch configmap", script):
+        missing.append("verify_manifest_before_tracker_patch")
+
+    role_rules = role.get("rules", []) if role else []
+    if "watch" not in _verbs_for_resource(role_rules, "apps", "deployments"):
+        missing.append("deployments.watch")
+    if "create" not in _verbs_for_resource(role_rules, "", "pods/exec"):
+        missing.append("pods/exec.create")
+
+    if missing:
+        return ProductionCheck("update_checker_hardened", False, "missing: " + ", ".join(missing))
+    return ProductionCheck(
+        "update_checker_hardened",
+        True,
+        "rollout waits for ready appmanifest before tracker patch; rbac includes deployments watch and pods/exec",
+    )
+
+
+def _verbs_for_resource(rules: list[dict[str, Any]], api_group: str, resource: str) -> set[str]:
+    verbs: set[str] = set()
+    for rule in rules:
+        if api_group not in [str(group) for group in rule.get("apiGroups", []) or []]:
+            continue
+        if resource not in [str(item) for item in rule.get("resources", []) or []]:
+            continue
+        verbs.update(str(verb) for verb in rule.get("verbs", []) or [])
+    return verbs
 
 
 def _env_map(env: list[dict[str, Any]]) -> dict[str, str]:

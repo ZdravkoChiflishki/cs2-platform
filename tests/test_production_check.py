@@ -5,6 +5,9 @@ import yaml
 from cs2_tools.production_check import ProductionCheck, run_production_checks
 
 
+ROOT = Path(__file__).resolve().parents[1]
+
+
 def write_minimal_repo(root: Path) -> None:
     (root / "configs" / "modes" / "all-weapons-dm").mkdir(parents=True)
     (root / "plugins").mkdir()
@@ -18,17 +21,7 @@ def write_minimal_repo(root: Path) -> None:
         "  - servers/staging-mirage-multicfg-01-deployment.yaml\n"
         "  - servers/staging-mirage-multicfg-01-service.yaml\n"
     )
-    (root / "k8s" / "base" / "update-checker.yaml").write_text(
-        yaml.safe_dump(
-            {
-                "apiVersion": "batch/v1",
-                "kind": "CronJob",
-                "metadata": {"name": "cs2-update-checker", "namespace": "cs2-servers"},
-                "spec": {"schedule": "*/15 * * * *"},
-            },
-            sort_keys=False,
-        )
-    )
+    (root / "k8s" / "base" / "update-checker.yaml").write_text((ROOT / "k8s" / "base" / "update-checker.yaml").read_text())
     configmap = {
         "apiVersion": "v1",
         "kind": "ConfigMap",
@@ -128,6 +121,7 @@ def test_production_checks_pass_for_minimal_ready_repo(tmp_path):
     assert all(check.ok for check in checks), checks
     assert ProductionCheck("image_pinned", True, "zizobg/cs2-server@sha256:" + "a" * 64) in checks
     assert any(check.name == "update_checker_present" and check.ok for check in checks)
+    assert ProductionCheck("update_checker_hardened", True, "rollout waits for ready appmanifest before tracker patch; rbac includes deployments watch and pods/exec") in checks
     assert ProductionCheck("disabled_plugins_match_mode", True, "deployment=GameModeManager,MenuManagerAPI mode=GameModeManager,MenuManagerAPI") in checks
     assert ProductionCheck("map_matches_mode_default", True, "deployment=de_mirage annotation=de_mirage mode=de_mirage") in checks
     assert ProductionCheck("hostname_contains_mode_display", True, "hostname=ZIZO.GG Staging All Weapons DM mode_display=All Weapons DM") in checks
@@ -252,3 +246,27 @@ def test_production_checks_fail_for_tagged_image_and_disabled_updater(tmp_path):
     assert checks["image_pinned"].ok is False
     assert checks["steam_update_policy"].ok is False
     assert checks["update_checker_present"].ok is False
+    assert checks["update_checker_hardened"].ok is False
+
+
+def test_production_checks_fail_when_update_checker_no_longer_verifies_manifest_before_tracker_patch(tmp_path):
+    write_minimal_repo(tmp_path)
+    update_checker_path = tmp_path / "k8s" / "base" / "update-checker.yaml"
+    docs = list(yaml.safe_load_all(update_checker_path.read_text()))
+    cronjob = next(doc for doc in docs if doc and doc.get("kind") == "CronJob")
+    script = cronjob["spec"]["jobTemplate"]["spec"]["template"]["spec"]["containers"][0]["args"][0]
+    script = script.replace("  verify_manifest_ready\n  kubectl patch configmap", "  kubectl patch configmap")
+    cronjob["spec"]["jobTemplate"]["spec"]["template"]["spec"]["containers"][0]["args"][0] = script
+    cronjob["spec"]["jobTemplate"]["spec"]["backoffLimit"] = 1
+    role = next(doc for doc in docs if doc and doc.get("kind") == "Role")
+    for rule in role["rules"]:
+        if rule["resources"] == ["deployments"]:
+            rule["verbs"] = ["get", "patch"]
+        if rule["resources"] == ["pods/exec"]:
+            rule["verbs"] = []
+    update_checker_path.write_text(yaml.safe_dump_all(docs, sort_keys=False))
+
+    checks = {check.name: check for check in run_production_checks(tmp_path)}
+
+    assert checks["update_checker_hardened"].ok is False
+    assert checks["update_checker_hardened"].detail == "missing: backoffLimit=0, verify_manifest_before_tracker_patch, deployments.watch, pods/exec.create"
