@@ -43,6 +43,7 @@ def run_production_checks(root: Path = Path(".")) -> list[ProductionCheck]:
     checks.append(ProductionCheck("plugin_runtime_enabled", env.get("ENABLE_PLUGIN_RUNTIME") == "true", env.get("ENABLE_PLUGIN_RUNTIME", "missing")))
     checks.append(_service_port_check(root, deployment, env))
     checks.append(_resources_check(container))
+    checks.append(_security_context_check(deployment, container))
 
     mode_name = env.get("CS2_MODE", "")
     mode_path = root / "configs" / "modes" / mode_name / "mode.yaml"
@@ -149,6 +150,30 @@ def _resources_check(container: dict[str, Any]) -> ProductionCheck:
         all(value != "missing" for value in (request_cpu, request_memory, limit_cpu, limit_memory)),
         detail,
     )
+
+
+def _security_context_check(deployment: dict[str, Any], container: dict[str, Any]) -> ProductionCheck:
+    pod_context = deployment.get("spec", {}).get("template", {}).get("spec", {}).get("securityContext", {}) or {}
+    container_context = container.get("securityContext", {}) or {}
+    drops = container_context.get("capabilities", {}).get("drop", []) or []
+    drop_detail = ",".join(map(str, drops))
+    detail = (
+        f"pod.fsGroup={pod_context.get('fsGroup', 'missing')} "
+        f"pod.fsGroupChangePolicy={pod_context.get('fsGroupChangePolicy', 'missing')} "
+        f"container.runAsUser={container_context.get('runAsUser', 'missing')} "
+        f"container.runAsGroup={container_context.get('runAsGroup', 'missing')} "
+        f"allowPrivilegeEscalation={container_context.get('allowPrivilegeEscalation', 'missing')} "
+        f"capabilities.drop={drop_detail}"
+    )
+    ok = (
+        pod_context.get("fsGroup") == 1000
+        and pod_context.get("fsGroupChangePolicy") == "OnRootMismatch"
+        and container_context.get("runAsUser") == 1000
+        and container_context.get("runAsGroup") == 1000
+        and container_context.get("allowPrivilegeEscalation") is False
+        and "ALL" in drops
+    )
+    return ProductionCheck("security_context_hardened", ok, detail)
 
 
 def _csv_join(values: list[Any]) -> str:

@@ -191,6 +191,7 @@ def render_server_manifests(profile: ServerProfile, config_root: Path = Path("co
                 "spec": {
                     "serviceAccountName": "cs2-server",
                     "nodeSelector": {"kubernetes.io/hostname": profile.node},
+                    "securityContext": {"fsGroup": 1000, "fsGroupChangePolicy": "OnRootMismatch"},
                     "containers": [
                         {
                             "name": "cs2",
@@ -198,6 +199,12 @@ def render_server_manifests(profile: ServerProfile, config_root: Path = Path("co
                             "imagePullPolicy": "Always",
                             "stdin": True,
                             "tty": True,
+                            "securityContext": {
+                                "runAsUser": 1000,
+                                "runAsGroup": 1000,
+                                "allowPrivilegeEscalation": False,
+                                "capabilities": {"drop": ["ALL"]},
+                            },
                             "env": env,
                             "ports": [
                                 {"name": "game-tcp", "containerPort": profile.port, "protocol": "TCP"},

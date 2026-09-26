@@ -50,6 +50,7 @@ def write_minimal_repo(root: Path) -> None:
                     }
                 },
                 "spec": {
+                    "securityContext": {"fsGroup": 1000, "fsGroupChangePolicy": "OnRootMismatch"},
                     "containers": [
                         {
                             "name": "cs2",
@@ -57,6 +58,12 @@ def write_minimal_repo(root: Path) -> None:
                             "resources": {
                                 "requests": {"cpu": "1000m", "memory": "2Gi"},
                                 "limits": {"cpu": "4000m", "memory": "8Gi"},
+                            },
+                            "securityContext": {
+                                "runAsUser": 1000,
+                                "runAsGroup": 1000,
+                                "allowPrivilegeEscalation": False,
+                                "capabilities": {"drop": ["ALL"]},
                             },
                             "env": [
                                 {"name": "CS2_MODE", "value": "all-weapons-dm"},
@@ -117,6 +124,7 @@ def test_production_checks_pass_for_minimal_ready_repo(tmp_path):
     assert ProductionCheck("hostname_contains_mode_display", True, "hostname=ZIZO.GG Staging All Weapons DM mode_display=All Weapons DM") in checks
     assert ProductionCheck("service_port_matches_deployment", True, "env=26001 public=26001 service_tcp=26001 service_udp=26001") in checks
     assert ProductionCheck("resources_declared", True, "requests.cpu=1000m requests.memory=2Gi limits.cpu=4000m limits.memory=8Gi") in checks
+    assert ProductionCheck("security_context_hardened", True, "pod.fsGroup=1000 pod.fsGroupChangePolicy=OnRootMismatch container.runAsUser=1000 container.runAsGroup=1000 allowPrivilegeEscalation=False capabilities.drop=ALL") in checks
 
 
 def test_production_checks_fail_when_map_or_hostname_drift_from_mode(tmp_path):
@@ -141,6 +149,22 @@ def test_production_checks_fail_when_map_or_hostname_drift_from_mode(tmp_path):
     assert checks["map_matches_mode_default"].detail == "deployment=cs_office annotation=cs_office mode=de_mirage"
     assert checks["hostname_contains_mode_display"].ok is False
     assert checks["hostname_contains_mode_display"].detail == "hostname=ZIZO.GG Staging Multi-CFG mode_display=All Weapons DM"
+
+def test_production_checks_fail_when_security_context_is_missing_or_privileged(tmp_path):
+    write_minimal_repo(tmp_path)
+    deployment_path = tmp_path / "k8s" / "servers" / "staging-mirage-multicfg-01-deployment.yaml"
+    deployment = yaml.safe_load(deployment_path.read_text())
+    pod_spec = deployment["spec"]["template"]["spec"]
+    pod_spec.pop("securityContext")
+    container = pod_spec["containers"][0]
+    container["securityContext"] = {"runAsUser": 0, "allowPrivilegeEscalation": True, "capabilities": {"drop": []}}
+    deployment_path.write_text(yaml.safe_dump(deployment, sort_keys=False))
+
+    checks = {check.name: check for check in run_production_checks(tmp_path)}
+
+    assert checks["security_context_hardened"].ok is False
+    assert checks["security_context_hardened"].detail == "pod.fsGroup=missing pod.fsGroupChangePolicy=missing container.runAsUser=0 container.runAsGroup=missing allowPrivilegeEscalation=True capabilities.drop="
+
 
 def test_production_checks_fail_when_container_resources_are_missing_or_partial(tmp_path):
     write_minimal_repo(tmp_path)

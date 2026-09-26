@@ -77,6 +77,13 @@ plugins:
     assert env["CS2_ADMIN_FLAGS"] == "@css/rcon,@css/root"
     assert env["CS2_DISABLED_PLUGINS"] == "GameModeManager,MenuManagerAPI"
     assert "CS2_CACHE_ROOT" not in env
+    assert deployment["spec"]["template"]["spec"]["securityContext"] == {"fsGroup": 1000, "fsGroupChangePolicy": "OnRootMismatch"}
+    assert container["securityContext"] == {
+        "runAsUser": 1000,
+        "runAsGroup": 1000,
+        "allowPrivilegeEscalation": False,
+        "capabilities": {"drop": ["ALL"]},
+    }
 
     service = yaml.safe_load(rendered["retake-01-service.yaml"])
     assert service["spec"]["ports"][0]["port"] == 26002

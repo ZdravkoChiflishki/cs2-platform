@@ -31,12 +31,22 @@ spec:
       serviceAccountName: cs2-server
       nodeSelector:
         kubernetes.io/hostname: k0s-slave5
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: cs2
           image: zizobg/cs2-server@sha256:94dcfa9f06352917bce8b5c809b49b396b762d41b8aa36314c5784d6b14973a4
           imagePullPolicy: Always
           stdin: true
           tty: true
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           env:
             - name: SERVER_ID
               value: staging-mirage-multicfg-01
