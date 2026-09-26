@@ -68,7 +68,15 @@ The command writes:
 
 ## Validation
 
-Before committing generated manifests:
+Before committing generated manifests, validate the profile itself:
+
+```bash
+PYTHONPATH=src python -m cs2_tools.server_generator profiles/servers/retake-01.yaml --validate-only
+```
+
+This fails if the profile uses unsafe identifiers, an unpinned image tag, a mismatched `public_address` port, an out-of-range game port, or a relative `cache_root`.
+
+Then validate rendered Kubernetes:
 
 ```bash
 kubectl apply --dry-run=server -f /tmp/retake-01

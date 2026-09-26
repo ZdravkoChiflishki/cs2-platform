@@ -15,6 +15,7 @@ PYTHONPATH=src python -m cs2_tools.validate_mode \
   configs/modes/all-weapons-dm/mode.yaml \
   configs/modes/retake/mode.yaml
 PYTHONPATH=src python -m cs2_tools.plugin_manifest plugins/plugins.yaml
+PYTHONPATH=src python -m cs2_tools.server_generator profiles/servers/retake-01.yaml --validate-only
 PYTHONPATH=src python -m cs2_tools.production_check
 ```
 

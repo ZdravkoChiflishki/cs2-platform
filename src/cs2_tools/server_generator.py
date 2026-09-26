@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 from dataclasses import MISSING, dataclass, fields
 from pathlib import Path
 from typing import Any
@@ -8,6 +9,15 @@ from typing import Any
 import yaml
 
 from .mode_settings import load_mode_settings
+
+
+DNS_LABEL_RE = re.compile(r"^[a-z0-9]([-a-z0-9]*[a-z0-9])?$")
+PINNED_IMAGE_RE = re.compile(r"^[\w./-]+@sha256:[a-f0-9]{64}$")
+PUBLIC_ADDRESS_RE = re.compile(r"^[A-Za-z0-9.-]+:(\d{1,5})$")
+
+
+class ServerProfileValidationError(ValueError):
+    pass
 
 
 @dataclass(frozen=True)
@@ -48,7 +58,30 @@ def load_server_profile(path: Path) -> ServerProfile:
     return ServerProfile(**data)
 
 
+def validate_server_profile(profile: ServerProfile) -> ServerProfile:
+    errors: list[str] = []
+    if not DNS_LABEL_RE.fullmatch(profile.server_id):
+        errors.append("server_id must be a lowercase DNS label")
+    if not DNS_LABEL_RE.fullmatch(profile.namespace):
+        errors.append("namespace must be a lowercase DNS label")
+    if not (1024 <= profile.port <= 65535):
+        errors.append("port must be between 1024 and 65535")
+    if not PINNED_IMAGE_RE.fullmatch(profile.image):
+        errors.append("image must be pinned by sha256 digest")
+    public_address = PUBLIC_ADDRESS_RE.fullmatch(profile.public_address)
+    if not public_address:
+        errors.append("public_address must be host:port")
+    elif int(public_address.group(1)) != profile.port:
+        errors.append(f"public_address port {public_address.group(1)} must match port {profile.port}")
+    if profile.cache_root is not None and not profile.cache_root.startswith("/"):
+        errors.append("cache_root must be an absolute path when set")
+    if errors:
+        raise ServerProfileValidationError("; ".join(errors))
+    return profile
+
+
 def render_server_manifests(profile: ServerProfile, config_root: Path = Path("configs")) -> dict[str, str]:
+    validate_server_profile(profile)
     mode = load_mode_settings(config_root / "modes" / profile.mode / "mode.yaml")
     labels = {
         "app.kubernetes.io/name": "cs2-server",
@@ -192,7 +225,7 @@ def render_server_manifests(profile: ServerProfile, config_root: Path = Path("co
 
 
 def write_server_manifests(profile_path: Path, out_dir: Path, config_root: Path = Path("configs")) -> list[Path]:
-    profile = load_server_profile(profile_path)
+    profile = validate_server_profile(load_server_profile(profile_path))
     rendered = render_server_manifests(profile, config_root=config_root)
     out_dir.mkdir(parents=True, exist_ok=True)
     paths = []
@@ -219,7 +252,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("profile", type=Path)
     parser.add_argument("--out-dir", type=Path, default=Path("k8s/servers"))
     parser.add_argument("--config-root", type=Path, default=Path("configs"))
+    parser.add_argument("--validate-only", action="store_true", help="validate the profile and mode reference without writing manifests")
     args = parser.parse_args(argv)
+
+    if args.validate_only:
+        profile = validate_server_profile(load_server_profile(args.profile))
+        load_mode_settings(args.config_root / "modes" / profile.mode / "mode.yaml")
+        print(f"ok {args.profile} server_id={profile.server_id} mode={profile.mode} port={profile.port}")
+        return 0
 
     paths = write_server_manifests(args.profile, args.out_dir, args.config_root)
     for path in paths:

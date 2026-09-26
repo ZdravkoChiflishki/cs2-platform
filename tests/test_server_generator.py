@@ -2,7 +2,9 @@ from pathlib import Path
 
 import yaml
 
-from cs2_tools.server_generator import ServerProfile, load_server_profile, render_server_manifests
+import pytest
+
+from cs2_tools.server_generator import ServerProfile, ServerProfileValidationError, load_server_profile, render_server_manifests, validate_server_profile
 
 
 def test_render_server_manifests_uses_profile_and_mode_defaults(tmp_path):
@@ -35,7 +37,7 @@ plugins:
         port=26002,
         public_address="zizogaming.duckdns.org:26002",
         node="k0s-slave5",
-        image="zizobg/cs2-server@sha256:abc",
+        image="zizobg/cs2-server@sha256:" + "a" * 64,
         pvc_size="120Gi",
         cache_root=None,
         cpu_request="1000m",
@@ -60,7 +62,7 @@ plugins:
 
     assert deployment["metadata"]["labels"]["zizo.gg/mode"] == "retake"
     assert deployment["spec"]["template"]["spec"]["nodeSelector"]["kubernetes.io/hostname"] == "k0s-slave5"
-    assert container["image"] == "zizobg/cs2-server@sha256:abc"
+    assert container["image"] == "zizobg/cs2-server@sha256:" + "a" * 64
     assert env["CS2_MODE"] == "retake"
     assert env["MAP"] == "de_inferno"
     assert env["PORT"] == "26002"
@@ -108,7 +110,7 @@ plugins:
         port=26003,
         public_address="zizogaming.duckdns.org:26003",
         node="k0s-slave5",
-        image="zizobg/cs2-server@sha256:def",
+        image="zizobg/cs2-server@sha256:" + "b" * 64,
         pvc_size="120Gi",
         cache_root="/cache/cs2",
     )
@@ -137,7 +139,7 @@ def test_load_server_profile_reads_hardening_fields(tmp_path):
                 "port": 26003,
                 "public_address": "zizogaming.duckdns.org:26003",
                 "node": "k0s-slave5",
-                "image": "zizobg/cs2-server@sha256:def",
+                "image": "zizobg/cs2-server@sha256:" + "b" * 64,
                 "steam_update_policy": "always",
                 "plugin_runtime_enabled": True,
                 "admin_steam_ids": ["76561199127257988"],
@@ -153,3 +155,45 @@ def test_load_server_profile_reads_hardening_fields(tmp_path):
     assert profile.plugin_runtime_enabled is True
     assert profile.admin_steam_ids == ("76561199127257988",)
     assert profile.admin_flags == ("@css/rcon", "@css/root")
+
+
+def test_validate_server_profile_accepts_pinned_profile():
+    profile = ServerProfile(
+        server_id="retake-01",
+        namespace="cs2-servers",
+        mode="retake",
+        display_name="ZIZO.GG Retake 01",
+        map="de_mirage",
+        port=26002,
+        public_address="zizogaming.duckdns.org:26002",
+        node="k0s-slave5",
+        image="zizobg/cs2-server@sha256:" + "a" * 64,
+    )
+
+    assert validate_server_profile(profile) == profile
+
+
+def test_validate_server_profile_rejects_unsafe_unpinned_or_mismatched_profiles():
+    base = dict(
+        server_id="retake-01",
+        namespace="cs2-servers",
+        mode="retake",
+        display_name="ZIZO.GG Retake 01",
+        map="de_mirage",
+        port=26002,
+        public_address="zizogaming.duckdns.org:26002",
+        node="k0s-slave5",
+        image="zizobg/cs2-server@sha256:" + "a" * 64,
+    )
+
+    for bad_update, expected in [
+        ({"server_id": "Retake_01"}, "server_id"),
+        ({"namespace": "CS2 Servers"}, "namespace"),
+        ({"image": "zizobg/cs2-server:latest"}, "image must be pinned"),
+        ({"public_address": "zizogaming.duckdns.org:27015"}, "public_address port"),
+        ({"port": 1023}, "port"),
+        ({"cache_root": "cache/cs2"}, "cache_root"),
+    ]:
+        data = {**base, **bad_update}
+        with pytest.raises(ServerProfileValidationError, match=expected):
+            validate_server_profile(ServerProfile(**data))
