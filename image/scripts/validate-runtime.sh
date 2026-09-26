@@ -10,4 +10,4 @@ ldconfig -p | grep -E 'libicu' >/dev/null || {
 command -v rsync >/dev/null
 command -v jq >/dev/null
 test -x /opt/steamcmd/steamcmd.sh
-/opt/steamcmd/steamcmd.sh +quit >/dev/null
+su -s /bin/sh steam -c '/opt/steamcmd/steamcmd.sh +quit >/dev/null'

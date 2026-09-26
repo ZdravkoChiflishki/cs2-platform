@@ -70,7 +70,8 @@ RUN mkdir -p /opt/cs2-platform/plugin-runtime /tmp/cs2-plugin-runtime \
     && unzip -oq /tmp/cs2-plugin-runtime/gamemodemanager.zip -d /opt/cs2-platform/plugin-runtime \
     && rm -rf /tmp/cs2-plugin-runtime
 
-RUN useradd --create-home --home-dir /home/steam --shell /bin/bash steam
+RUN useradd --create-home --home-dir /home/steam --shell /bin/bash steam \
+    && chown -R steam:steam /opt/steamcmd
 
 WORKDIR /opt/cs2-platform
 COPY pyproject.toml README.md ./
