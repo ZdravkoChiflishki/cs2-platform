@@ -49,8 +49,18 @@ def run_production_checks(root: Path = Path(".")) -> list[ProductionCheck]:
         expected_group = str(mode.get("mapGroup", ""))
         actual_group = env.get("MAP_GROUP", "")
         checks.append(ProductionCheck("map_group_matches_mode", actual_group == expected_group, f"deployment={actual_group} mode={expected_group}"))
+        expected_disabled = _csv_join(mode.get("plugins", {}).get("disabledRuntime", []) or [])
+        actual_disabled = env.get("CS2_DISABLED_PLUGINS", "")
+        checks.append(
+            ProductionCheck(
+                "disabled_plugins_match_mode",
+                actual_disabled == expected_disabled,
+                f"deployment={actual_disabled} mode={expected_disabled}",
+            )
+        )
     else:
         checks.append(ProductionCheck("map_group_matches_mode", False, f"missing mode file for {mode_name!r}"))
+        checks.append(ProductionCheck("disabled_plugins_match_mode", False, f"missing mode file for {mode_name!r}"))
 
     if checks[0].ok:
         update_checker_docs = list(yaml.safe_load_all((root / "k8s" / "base" / "update-checker.yaml").read_text()))
@@ -69,6 +79,10 @@ def _load_yaml(path: Path) -> dict[str, Any]:
 
 def _env_map(env: list[dict[str, Any]]) -> dict[str, str]:
     return {str(item["name"]): str(item.get("value", "")) for item in env if "name" in item and "value" in item}
+
+
+def _csv_join(values: list[Any]) -> str:
+    return ",".join(str(value).strip() for value in values if str(value).strip())
 
 
 def main(argv: list[str] | None = None) -> int:

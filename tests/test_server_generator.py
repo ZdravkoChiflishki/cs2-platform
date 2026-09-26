@@ -21,6 +21,9 @@ mapGroup: mg_active
 plugins:
   enabled:
     - cs2rcon
+  disabledRuntime:
+    - GameModeManager
+    - MenuManagerAPI
 """.strip()
     )
     profile = ServerProfile(
@@ -64,6 +67,7 @@ plugins:
     assert env["GAME_TYPE"] == "0"
     assert env["GAME_MODE"] == "0"
     assert env["MAP_GROUP"] == "mg_active"
+    assert env["CS2_DISABLED_PLUGINS"] == "GameModeManager,MenuManagerAPI"
     assert "CS2_CACHE_ROOT" not in env
 
     service = yaml.safe_load(rendered["retake-01-service.yaml"])

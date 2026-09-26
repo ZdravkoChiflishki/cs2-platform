@@ -28,6 +28,7 @@ class ModeValidationResult:
     name: str
     exec_cfg: str
     max_players: int
+    disabled_plugins: tuple[str, ...] = ()
 
 
 def validate_mode_file(path: Path, plugin_catalog_path: Path = Path("plugins/plugins.yaml")) -> ModeValidationResult:
@@ -41,14 +42,22 @@ def validate_mode_file(path: Path, plugin_catalog_path: Path = Path("plugins/plu
     if not cfg_path.exists():
         raise ValidationError(f"{path}: exec cfg does not exist: {cfg_path}")
 
-    plugins = data.get("plugins", {}).get("enabled", []) or []
+    plugins_data = data.get("plugins", {}) or {}
+    plugins = plugins_data.get("enabled", []) or []
     plugins = list(map(str, plugins))
     banned = sorted(set(plugins) & BANNED_DEFAULT_PLUGINS)
     if banned:
         raise ValidationError(f"{path}: banned default plugins enabled: {', '.join(banned)}")
     _validate_plugins(path, plugins, plugin_catalog_path)
+    disabled_plugins = tuple(str(item).strip() for item in plugins_data.get("disabledRuntime", []) or [] if str(item).strip())
+    _validate_disabled_runtime_plugins(path, disabled_plugins)
 
-    return ModeValidationResult(name=str(data["name"]), exec_cfg=exec_cfg, max_players=int(data["maxPlayers"]))
+    return ModeValidationResult(
+        name=str(data["name"]),
+        exec_cfg=exec_cfg,
+        max_players=int(data["maxPlayers"]),
+        disabled_plugins=disabled_plugins,
+    )
 
 
 def _validate_plugins(path: Path, plugins: list[str], plugin_catalog_path: Path) -> None:
@@ -65,6 +74,12 @@ def _validate_plugins(path: Path, plugins: list[str], plugin_catalog_path: Path)
             raise ValidationError(f"{path}: {exc}") from exc
         if plugin.phase == "disabled":
             raise ValidationError(f"{path}: disabled plugin enabled: {plugin_name}")
+
+
+def _validate_disabled_runtime_plugins(path: Path, disabled_plugins: tuple[str, ...]) -> None:
+    for plugin_name in disabled_plugins:
+        if "/" in plugin_name or "\\" in plugin_name or ".." in plugin_name:
+            raise ValidationError(f"{path}: unsafe disabledRuntime plugin name: {plugin_name}")
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -16,6 +16,12 @@ class ModeSettings:
     game_type: int
     game_mode: int
     map_group: str
+    disabled_plugins: tuple[str, ...] = ()
+
+
+def _plugin_list(data: dict, key: str) -> tuple[str, ...]:
+    plugins = data.get("plugins", {}) or {}
+    return tuple(str(item).strip() for item in plugins.get(key, []) or [] if str(item).strip())
 
 
 def load_mode_settings(path: Path) -> ModeSettings:
@@ -29,4 +35,5 @@ def load_mode_settings(path: Path) -> ModeSettings:
         game_type=int(data.get("gameType", 0)),
         game_mode=int(data.get("gameMode", 0)),
         map_group=str(data.get("mapGroup", "mg_active")),
+        disabled_plugins=_plugin_list(data, "disabledRuntime"),
     )

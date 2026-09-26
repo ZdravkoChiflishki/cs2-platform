@@ -15,6 +15,7 @@ def test_load_mode_settings_reads_retake_profile():
         game_type=0,
         game_mode=0,
         map_group="mg_active",
+        disabled_plugins=(),
     )
 
 
@@ -24,3 +25,11 @@ def test_load_mode_settings_reads_all_weapons_dm_profile():
     assert settings.game_type == 1
     assert settings.game_mode == 2
     assert settings.max_players == 24
+    assert settings.disabled_plugins == (
+        "CS2-SimpleAdmin",
+        "CS2-CustomVotes",
+        "GameModeManager",
+        "MenuManagerAPI",
+        "MenuManagerCore",
+        "PlayerSettings",
+    )

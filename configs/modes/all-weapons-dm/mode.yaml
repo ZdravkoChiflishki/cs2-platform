@@ -9,3 +9,10 @@ mapGroup: mg_dm
 plugins:
   enabled:
     - cs2rcon
+  disabledRuntime:
+    - CS2-SimpleAdmin
+    - CS2-CustomVotes
+    - GameModeManager
+    - MenuManagerAPI
+    - MenuManagerCore
+    - PlayerSettings

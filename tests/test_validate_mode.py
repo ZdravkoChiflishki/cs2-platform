@@ -127,3 +127,38 @@ def test_validate_mode_rejects_disabled_plugins_from_manifest(tmp_path):
     with pytest.raises(ValidationError, match="disabled plugin enabled: heavy"):
         validate_mode_file(mode, plugin_catalog_path=catalog)
 
+
+def test_validate_mode_returns_safe_disabled_runtime_plugin_folders(tmp_path):
+    mode = tmp_path / "mode.yaml"
+    mode.write_text(yaml.safe_dump({
+        "name": "contained",
+        "displayName": "Contained",
+        "defaultMap": "de_mirage",
+        "exec": "contained.cfg",
+        "maxPlayers": 24,
+        "plugins": {"disabledRuntime": ["GameModeManager", "MenuManagerAPI"]},
+    }))
+    (tmp_path / "cfg").mkdir()
+    (tmp_path / "cfg" / "contained.cfg").write_text("echo contained")
+
+    result = validate_mode_file(mode)
+
+    assert result.disabled_plugins == ("GameModeManager", "MenuManagerAPI")
+
+
+def test_validate_mode_rejects_unsafe_disabled_runtime_plugin_name(tmp_path):
+    mode = tmp_path / "mode.yaml"
+    mode.write_text(yaml.safe_dump({
+        "name": "bad",
+        "displayName": "Bad",
+        "defaultMap": "de_mirage",
+        "exec": "bad.cfg",
+        "maxPlayers": 24,
+        "plugins": {"disabledRuntime": ["../MenuManagerAPI"]},
+    }))
+    (tmp_path / "cfg").mkdir()
+    (tmp_path / "cfg" / "bad.cfg").write_text("echo bad")
+
+    with pytest.raises(ValidationError, match="unsafe disabledRuntime plugin name"):
+        validate_mode_file(mode)
+

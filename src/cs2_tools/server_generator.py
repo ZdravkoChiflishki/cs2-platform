@@ -100,6 +100,8 @@ def render_server_manifests(profile: ServerProfile, config_root: Path = Path("co
         {"name": "CONFIG_ROOT", "value": "/opt/cs2-platform/configs"},
         {"name": "CS2_ROOT", "value": "/home/steam/cs2"},
     ]
+    if mode.disabled_plugins:
+        env.append({"name": "CS2_DISABLED_PLUGINS", "value": ",".join(mode.disabled_plugins)})
     if profile.cache_root:
         env.append({"name": "CS2_CACHE_ROOT", "value": profile.cache_root})
     env.extend(

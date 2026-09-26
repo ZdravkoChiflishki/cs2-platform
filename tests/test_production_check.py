@@ -43,6 +43,7 @@ def write_minimal_repo(root: Path) -> None:
                                 {"name": "MAP_GROUP", "value": "mg_dm"},
                                 {"name": "STEAM_UPDATE_POLICY", "value": "always"},
                                 {"name": "ENABLE_PLUGIN_RUNTIME", "value": "true"},
+                                {"name": "CS2_DISABLED_PLUGINS", "value": "GameModeManager,MenuManagerAPI"},
                             ],
                         }
                     ]
@@ -60,6 +61,10 @@ def write_minimal_repo(root: Path) -> None:
         "gameType: 1\n"
         "gameMode: 2\n"
         "mapGroup: mg_dm\n"
+        "plugins:\n"
+        "  disabledRuntime:\n"
+        "    - GameModeManager\n"
+        "    - MenuManagerAPI\n"
     )
 
 
@@ -71,6 +76,23 @@ def test_production_checks_pass_for_minimal_ready_repo(tmp_path):
     assert all(check.ok for check in checks), checks
     assert ProductionCheck("image_pinned", True, "zizobg/cs2-server@sha256:" + "a" * 64) in checks
     assert any(check.name == "update_checker_present" and check.ok for check in checks)
+    assert ProductionCheck("disabled_plugins_match_mode", True, "deployment=GameModeManager,MenuManagerAPI mode=GameModeManager,MenuManagerAPI") in checks
+
+
+def test_production_checks_fail_when_disabled_plugins_drift_from_mode(tmp_path):
+    write_minimal_repo(tmp_path)
+    deployment_path = tmp_path / "k8s" / "servers" / "staging-mirage-multicfg-01-deployment.yaml"
+    deployment = yaml.safe_load(deployment_path.read_text())
+    container = deployment["spec"]["template"]["spec"]["containers"][0]
+    for item in container["env"]:
+        if item["name"] == "CS2_DISABLED_PLUGINS":
+            item["value"] = "MenuManagerAPI"
+    deployment_path.write_text(yaml.safe_dump(deployment, sort_keys=False))
+
+    checks = {check.name: check for check in run_production_checks(tmp_path)}
+
+    assert checks["disabled_plugins_match_mode"].ok is False
+    assert checks["disabled_plugins_match_mode"].detail == "deployment=MenuManagerAPI mode=GameModeManager,MenuManagerAPI"
 
 
 def test_production_checks_fail_for_tagged_image_and_disabled_updater(tmp_path):
