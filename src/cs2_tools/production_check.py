@@ -44,6 +44,7 @@ def run_production_checks(root: Path = Path(".")) -> list[ProductionCheck]:
     checks.append(_service_port_check(root, deployment, env))
     checks.append(_resources_check(container))
     checks.append(_security_context_check(deployment, container))
+    checks.append(_data_permission_repair_check(deployment))
 
     mode_name = env.get("CS2_MODE", "")
     mode_path = root / "configs" / "modes" / mode_name / "mode.yaml"
@@ -174,6 +175,27 @@ def _security_context_check(deployment: dict[str, Any], container: dict[str, Any
         and "ALL" in drops
     )
     return ProductionCheck("security_context_hardened", ok, detail)
+
+
+def _data_permission_repair_check(deployment: dict[str, Any]) -> ProductionCheck:
+    pod_spec = deployment.get("spec", {}).get("template", {}).get("spec", {}) or {}
+    init_containers = pod_spec.get("initContainers", []) or []
+    repair = next((container for container in init_containers if container.get("name") == "repair-cs2-data-permissions"), None)
+    if not repair:
+        return ProductionCheck("data_permission_repair_present", False, "missing repair-cs2-data-permissions")
+
+    args = " ".join(map(str, repair.get("args", []) or []))
+    mounts = {str(mount.get("name", "")): str(mount.get("mountPath", "")) for mount in repair.get("volumeMounts", []) or []}
+    ok = (
+        repair.get("image") == "busybox:1.36"
+        and repair.get("command") == ["sh", "-c"]
+        and "chown -R 1000:1000 /home/steam/cs2" in args
+        and mounts.get("cs2-data") == "/home/steam/cs2"
+    )
+    detail = "repair-cs2-data-permissions chown=1000:1000 mount=/home/steam/cs2" if ok else (
+        f"image={repair.get('image', 'missing')} args={args or 'missing'} mount={mounts.get('cs2-data', 'missing')}"
+    )
+    return ProductionCheck("data_permission_repair_present", ok, detail)
 
 
 def _csv_join(values: list[Any]) -> str:

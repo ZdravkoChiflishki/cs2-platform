@@ -192,6 +192,15 @@ def render_server_manifests(profile: ServerProfile, config_root: Path = Path("co
                     "serviceAccountName": "cs2-server",
                     "nodeSelector": {"kubernetes.io/hostname": profile.node},
                     "securityContext": {"fsGroup": 1000, "fsGroupChangePolicy": "OnRootMismatch"},
+                    "initContainers": [
+                        {
+                            "name": "repair-cs2-data-permissions",
+                            "image": "busybox:1.36",
+                            "command": ["sh", "-c"],
+                            "args": ["chown -R 1000:1000 /home/steam/cs2 2>/dev/null || true"],
+                            "volumeMounts": [{"name": "cs2-data", "mountPath": "/home/steam/cs2"}],
+                        }
+                    ],
                     "containers": [
                         {
                             "name": "cs2",

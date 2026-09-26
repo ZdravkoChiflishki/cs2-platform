@@ -34,6 +34,17 @@ spec:
       securityContext:
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
+      initContainers:
+        - name: repair-cs2-data-permissions
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+          args:
+            - chown -R 1000:1000 /home/steam/cs2 2>/dev/null || true
+          volumeMounts:
+            - name: cs2-data
+              mountPath: /home/steam/cs2
       containers:
         - name: cs2
           image: zizobg/cs2-server@sha256:94dcfa9f06352917bce8b5c809b49b396b762d41b8aa36314c5784d6b14973a4

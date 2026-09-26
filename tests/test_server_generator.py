@@ -77,7 +77,17 @@ plugins:
     assert env["CS2_ADMIN_FLAGS"] == "@css/rcon,@css/root"
     assert env["CS2_DISABLED_PLUGINS"] == "GameModeManager,MenuManagerAPI"
     assert "CS2_CACHE_ROOT" not in env
-    assert deployment["spec"]["template"]["spec"]["securityContext"] == {"fsGroup": 1000, "fsGroupChangePolicy": "OnRootMismatch"}
+    pod_spec = deployment["spec"]["template"]["spec"]
+    assert pod_spec["securityContext"] == {"fsGroup": 1000, "fsGroupChangePolicy": "OnRootMismatch"}
+    assert pod_spec["initContainers"] == [
+        {
+            "name": "repair-cs2-data-permissions",
+            "image": "busybox:1.36",
+            "command": ["sh", "-c"],
+            "args": ["chown -R 1000:1000 /home/steam/cs2 2>/dev/null || true"],
+            "volumeMounts": [{"name": "cs2-data", "mountPath": "/home/steam/cs2"}],
+        }
+    ]
     assert container["securityContext"] == {
         "runAsUser": 1000,
         "runAsGroup": 1000,
