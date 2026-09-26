@@ -14,6 +14,12 @@ from .mode_settings import load_mode_settings
 DNS_LABEL_RE = re.compile(r"^[a-z0-9]([-a-z0-9]*[a-z0-9])?$")
 PINNED_IMAGE_RE = re.compile(r"^[\w./-]+@sha256:[a-f0-9]{64}$")
 PUBLIC_ADDRESS_RE = re.compile(r"^[A-Za-z0-9.-]+:(\d{1,5})$")
+FORBIDDEN_SECURITY_OVERRIDE_FIELDS = {
+    "securityContext",
+    "security_context",
+    "podSecurityContext",
+    "containerSecurityContext",
+}
 
 
 class ServerProfileValidationError(ValueError):
@@ -45,6 +51,12 @@ class ServerProfile:
 
 def load_server_profile(path: Path) -> ServerProfile:
     data = yaml.safe_load(path.read_text()) or {}
+    forbidden_security_overrides = sorted(set(data) & FORBIDDEN_SECURITY_OVERRIDE_FIELDS)
+    if forbidden_security_overrides:
+        raise ValueError(
+            f"security context is platform-managed in {path}: "
+            f"remove {', '.join(forbidden_security_overrides)}"
+        )
     valid = {field.name for field in fields(ServerProfile)}
     unknown = sorted(set(data) - valid)
     if unknown:

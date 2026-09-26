@@ -74,7 +74,18 @@ Before committing generated manifests, validate the profile itself:
 PYTHONPATH=src python -m cs2_tools.server_generator profiles/servers/retake-01.yaml --validate-only
 ```
 
-This fails if the profile uses unsafe identifiers, an unpinned image tag, a mismatched `public_address` port, an out-of-range game port, or a relative `cache_root`.
+This fails if the profile uses unsafe identifiers, an unpinned image tag, a mismatched `public_address` port, an out-of-range game port, a relative `cache_root`, or an attempted security context override.
+
+security context is platform-managed. Do not add these fields to server profiles:
+
+```text
+securityContext
+security_context
+podSecurityContext
+containerSecurityContext
+```
+
+The generator owns the hardened pod/container settings (`fsGroup=1000`, `runAsUser=1000`, `allowPrivilegeEscalation=false`, `capabilities.drop=ALL`) plus the CS2 data permission repair initContainer so generated servers stay compatible with non-root runtime hardening.
 
 Then validate rendered Kubernetes:
 

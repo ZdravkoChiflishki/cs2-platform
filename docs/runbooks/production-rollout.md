@@ -26,7 +26,28 @@ all tests passed
 all mode files report ok
 ```
 
-## Gate 2: build/deploy through Argo
+## Gate 2: pre-rollout disruption check
+
+The Deployment uses `Recreate` and a local-path PVC, so a rollout interrupts the live server. Check player state before any manual rollout, GitOps image change, rollback, or forced restart:
+
+```bash
+uv run --with rcon==2.4.9 python /home/chz1sf/workspace/kubernetes/scripts/cs2-rcon.py \
+  --namespace cs2-servers \
+  --deployment staging-mirage-multicfg-01 \
+  --host 192.168.0.8 \
+  --port 26001 \
+  status
+```
+
+Expected before a disruptive action:
+
+```text
+0 human players, or explicit operator approval to interrupt the active session
+```
+
+Do not force a rollout while human players are connected. If smoke catches drift while players are active, report the drift and wait for approval instead of using `rollout restart`, deleting the pod, or forcing `changelevel`.
+
+## Gate 3: build/deploy through Argo
 
 Commit and push source changes:
 
@@ -69,7 +90,7 @@ latest cs2-platform-build-deploy-* is Succeeded
 homelab-gitops receives a pinned image digest commit
 ```
 
-## Gate 3: ArgoCD health
+## Gate 4: ArgoCD health
 
 ```bash
 kubectl -n argocd annotate application cs2-platform argocd.argoproj.io/refresh=hard --overwrite
@@ -84,7 +105,7 @@ cs2-platform Synced Healthy
 rollout successful
 ```
 
-## Gate 4: smoke check
+## Gate 5: smoke check
 
 ```bash
 PYTHONPATH=src python -m cs2_tools.smoke \
@@ -101,10 +122,11 @@ ok: true
 max_players: expected value
 bots: expected value
 pod_restarts: 0
+deployment_security_context_hardened: pod.fsGroup=1000, container.runAsUser=1000, capabilities.drop=ALL
 no_fatal_logs: none
 ```
 
-## Gate 5: updater health check
+## Gate 6: updater health check
 
 The update checker must not mark a Valve `required_version` handled until the live Steam appmanifest is healthy.
 
@@ -125,7 +147,7 @@ already handled and manifest is ready: <buildid>:<TargetBuildID>:4:0
 pod UID unchanged
 ```
 
-## Gate 6: manual gameplay check
+## Gate 7: manual gameplay check
 
 For every mode promoted, a human should test:
 
@@ -140,10 +162,11 @@ For every mode promoted, a human should test:
 
 Rollback is GitOps-first:
 
-1. Find the previous good image digest in `homelab-gitops` history.
-2. Revert the GitOps digest commit or restore the previous image line.
-3. Push `homelab-gitops`.
-4. Force ArgoCD refresh/sync.
-5. Run smoke check.
+1. Run Gate 2 unless this is an emergency recovery and players are already disconnected.
+2. Find the previous good image digest in `homelab-gitops` history.
+3. Revert the GitOps digest commit or restore the previous image line.
+4. Push `homelab-gitops`.
+5. Force ArgoCD refresh/sync.
+6. Run smoke check.
 
 Do not delete the game data PVC during rollback unless the Steam install itself is corrupted.

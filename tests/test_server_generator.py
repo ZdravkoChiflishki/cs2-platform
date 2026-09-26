@@ -174,6 +174,27 @@ def test_load_server_profile_reads_hardening_fields(tmp_path):
     assert profile.admin_flags == ("@css/rcon", "@css/root")
 
 
+def test_load_server_profile_rejects_security_context_overrides(tmp_path):
+    base = {
+        "server_id": "dm-01",
+        "namespace": "cs2-servers",
+        "mode": "all-weapons-dm",
+        "display_name": "ZIZO.GG DM 01",
+        "map": "de_mirage",
+        "port": 26003,
+        "public_address": "zizogaming.duckdns.org:26003",
+        "node": "k0s-slave5",
+        "image": "zizobg/cs2-server@sha256:" + "b" * 64,
+    }
+
+    for forbidden in ("securityContext", "security_context", "podSecurityContext", "containerSecurityContext"):
+        profile_path = tmp_path / f"{forbidden}.yaml"
+        profile_path.write_text(yaml.safe_dump({**base, forbidden: {}}, sort_keys=False))
+
+        with pytest.raises(ValueError, match="security context is platform-managed"):
+            load_server_profile(profile_path)
+
+
 def test_validate_server_profile_accepts_pinned_profile():
     profile = ServerProfile(
         server_id="retake-01",
