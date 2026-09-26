@@ -42,6 +42,7 @@ def run_production_checks(root: Path = Path(".")) -> list[ProductionCheck]:
     checks.append(ProductionCheck("steam_update_policy", env.get("STEAM_UPDATE_POLICY") == "always", env.get("STEAM_UPDATE_POLICY", "missing")))
     checks.append(ProductionCheck("plugin_runtime_enabled", env.get("ENABLE_PLUGIN_RUNTIME") == "true", env.get("ENABLE_PLUGIN_RUNTIME", "missing")))
     checks.append(_service_port_check(root, deployment, env))
+    checks.append(_resources_check(container))
 
     mode_name = env.get("CS2_MODE", "")
     mode_path = root / "configs" / "modes" / mode_name / "mode.yaml"
@@ -129,6 +130,25 @@ def _service_port_check(root: Path, deployment: dict[str, Any], env: dict[str, s
 def _extract_public_port(public_address: str) -> str:
     match = re.search(r":(\d{1,5})$", public_address)
     return match.group(1) if match else "missing"
+
+
+def _resources_check(container: dict[str, Any]) -> ProductionCheck:
+    resources = container.get("resources", {}) or {}
+    requests = resources.get("requests", {}) or {}
+    limits = resources.get("limits", {}) or {}
+    request_cpu = str(requests.get("cpu", "missing"))
+    request_memory = str(requests.get("memory", "missing"))
+    limit_cpu = str(limits.get("cpu", "missing"))
+    limit_memory = str(limits.get("memory", "missing"))
+    detail = (
+        f"requests.cpu={request_cpu} requests.memory={request_memory} "
+        f"limits.cpu={limit_cpu} limits.memory={limit_memory}"
+    )
+    return ProductionCheck(
+        "resources_declared",
+        all(value != "missing" for value in (request_cpu, request_memory, limit_cpu, limit_memory)),
+        detail,
+    )
 
 
 def _csv_join(values: list[Any]) -> str:
