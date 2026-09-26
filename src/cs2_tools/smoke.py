@@ -4,6 +4,7 @@ import argparse
 import json
 import subprocess
 from dataclasses import asdict, dataclass
+from typing import Any
 
 from .query_server import ServerInfo, query_a2s_info
 
@@ -64,10 +65,38 @@ def run_kubectl_check(namespace: str, selector: str, deployment: str) -> list[Sm
     deploy_json = _kubectl_json("get", "deploy", deployment, "-n", namespace, "-o", "json")
     available = int(deploy_json.get("status", {}).get("availableReplicas", 0))
     checks.append(SmokeCheck("deployment_available", available >= 1, f"available={available}"))
+    checks.append(evaluate_deployment_security_context(deploy_json))
 
     logs = _kubectl_text("logs", pod_name, "-n", namespace, "--tail=600")
     checks.append(evaluate_logs(logs))
     return checks
+
+
+def evaluate_deployment_security_context(deployment: dict[str, Any]) -> SmokeCheck:
+    pod_spec = deployment.get("spec", {}).get("template", {}).get("spec", {}) or {}
+    pod_context = pod_spec.get("securityContext", {}) or {}
+    containers = pod_spec.get("containers", []) or []
+    container = next((item for item in containers if item.get("name") == "cs2"), containers[0] if containers else {})
+    container_context = container.get("securityContext", {}) or {}
+    drops = container_context.get("capabilities", {}).get("drop", []) or []
+    drop_detail = ",".join(map(str, drops))
+    detail = (
+        f"pod.fsGroup={pod_context.get('fsGroup', 'missing')} "
+        f"pod.fsGroupChangePolicy={pod_context.get('fsGroupChangePolicy', 'missing')} "
+        f"container.runAsUser={container_context.get('runAsUser', 'missing')} "
+        f"container.runAsGroup={container_context.get('runAsGroup', 'missing')} "
+        f"allowPrivilegeEscalation={container_context.get('allowPrivilegeEscalation', 'missing')} "
+        f"capabilities.drop={drop_detail}"
+    )
+    ok = (
+        pod_context.get("fsGroup") == 1000
+        and pod_context.get("fsGroupChangePolicy") == "OnRootMismatch"
+        and container_context.get("runAsUser") == 1000
+        and container_context.get("runAsGroup") == 1000
+        and container_context.get("allowPrivilegeEscalation") is False
+        and "ALL" in drops
+    )
+    return SmokeCheck("deployment_security_context_hardened", ok, detail)
 
 
 def evaluate_logs(logs: str) -> SmokeCheck:

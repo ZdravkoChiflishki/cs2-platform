@@ -1,4 +1,4 @@
-from cs2_tools.smoke import SmokeCheck, evaluate_server_info, evaluate_logs
+from cs2_tools.smoke import SmokeCheck, evaluate_deployment_security_context, evaluate_server_info, evaluate_logs
 from cs2_tools.query_server import ServerInfo
 
 
@@ -67,4 +67,60 @@ System.ArgumentNullException: Schema target points to null. (Parameter 'pointer'
         "no_fatal_logs",
         False,
         "Error invoking callback, Schema target points to null",
+    )
+
+
+def test_evaluate_deployment_security_context_accepts_hardened_runtime():
+    deployment = {
+        "spec": {
+            "template": {
+                "spec": {
+                    "securityContext": {"fsGroup": 1000, "fsGroupChangePolicy": "OnRootMismatch"},
+                    "containers": [
+                        {
+                            "name": "cs2",
+                            "securityContext": {
+                                "runAsUser": 1000,
+                                "runAsGroup": 1000,
+                                "allowPrivilegeEscalation": False,
+                                "capabilities": {"drop": ["ALL"]},
+                            },
+                        }
+                    ],
+                }
+            }
+        }
+    }
+
+    assert evaluate_deployment_security_context(deployment) == SmokeCheck(
+        "deployment_security_context_hardened",
+        True,
+        "pod.fsGroup=1000 pod.fsGroupChangePolicy=OnRootMismatch container.runAsUser=1000 container.runAsGroup=1000 allowPrivilegeEscalation=False capabilities.drop=ALL",
+    )
+
+
+def test_evaluate_deployment_security_context_rejects_privileged_runtime():
+    deployment = {
+        "spec": {
+            "template": {
+                "spec": {
+                    "containers": [
+                        {
+                            "name": "cs2",
+                            "securityContext": {
+                                "runAsUser": 0,
+                                "allowPrivilegeEscalation": True,
+                                "capabilities": {"drop": []},
+                            },
+                        }
+                    ]
+                }
+            }
+        }
+    }
+
+    assert evaluate_deployment_security_context(deployment) == SmokeCheck(
+        "deployment_security_context_hardened",
+        False,
+        "pod.fsGroup=missing pod.fsGroupChangePolicy=missing container.runAsUser=0 container.runAsGroup=missing allowPrivilegeEscalation=True capabilities.drop=",
     )
