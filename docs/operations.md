@@ -25,6 +25,31 @@ MVP uses a per-server `local-path` PVC. The PVC should not be deleted during nor
 
 Phase 2 should introduce a node-local CS2 cache and updater Job per node.
 
+## Update checker
+
+`cs2-update-checker` polls Valve `UpToDateCheck` every 15 minutes. It owns the mutable `cs2-version-tracker` ConfigMap; do not add that tracker as a GitOps-managed ConfigMap because Argo self-heal would reset the handled version.
+
+The checker patches the tracker only after rollout plus appmanifest verification succeeds:
+
+```text
+buildid == TargetBuildID
+buildid != 0
+TargetBuildID != 0
+StateFlags == 4
+UpdateResult == 0
+```
+
+Manual health probe:
+
+```bash
+JOB=cs2-update-checker-manual-$(date +%s)
+kubectl -n cs2-servers create job --from=cronjob/cs2-update-checker "$JOB"
+kubectl -n cs2-servers wait --for=condition=complete "job/$JOB" --timeout=240s
+kubectl -n cs2-servers logs "job/$JOB" --all-containers=true
+```
+
+Healthy no-op output should include `already handled and manifest is ready` and must not restart the pod.
+
 ## Deploy workflow
 
 Normal development flow is Git plus Argo Workflows, not local Docker push:

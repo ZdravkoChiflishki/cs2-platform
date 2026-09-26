@@ -14,6 +14,8 @@ PYTHONPATH=src python -m cs2_tools.validate_mode \
   configs/modes/multicfg/mode.yaml \
   configs/modes/all-weapons-dm/mode.yaml \
   configs/modes/retake/mode.yaml
+PYTHONPATH=src python -m cs2_tools.plugin_manifest plugins/plugins.yaml
+PYTHONPATH=src python -m cs2_tools.production_check
 ```
 
 Expected:
@@ -97,7 +99,28 @@ pod_restarts: 0
 no_fatal_logs: none
 ```
 
-## Gate 5: manual gameplay check
+## Gate 5: updater health check
+
+The update checker must not mark a Valve `required_version` handled until the live Steam appmanifest is healthy.
+
+```bash
+JOB=cs2-update-checker-manual-$(date +%s)
+BEFORE_UID=$(kubectl -n cs2-servers get pod -l zizo.gg/server-id=staging-mirage-multicfg-01 -o jsonpath='{.items[0].metadata.uid}')
+kubectl -n cs2-servers create job --from=cronjob/cs2-update-checker "$JOB"
+kubectl -n cs2-servers wait --for=condition=complete "job/$JOB" --timeout=240s
+kubectl -n cs2-servers logs "job/$JOB" --all-containers=true
+AFTER_UID=$(kubectl -n cs2-servers get pod -l zizo.gg/server-id=staging-mirage-multicfg-01 -o jsonpath='{.items[0].metadata.uid}')
+test "$BEFORE_UID" = "$AFTER_UID"
+```
+
+Expected on a healthy, already-current server:
+
+```text
+already handled and manifest is ready: <buildid>:<TargetBuildID>:4:0
+pod UID unchanged
+```
+
+## Gate 6: manual gameplay check
 
 For every mode promoted, a human should test:
 

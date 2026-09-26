@@ -22,6 +22,13 @@ cpu_request: 1000m
 cpu_limit: 4000m
 memory_request: 2Gi
 memory_limit: 8Gi
+steam_update_policy: always
+plugin_runtime_enabled: true
+admin_steam_ids:
+  - "76561199127257988"
+admin_flags:
+  - "@css/rcon"
+  - "@css/root"
 ```
 
 Mode-derived fields come from `configs/modes/<mode>/mode.yaml`:
@@ -32,6 +39,16 @@ MAXPLAYERS
 GAME_TYPE
 GAME_MODE
 MAP_GROUP
+CS2_DISABLED_PLUGINS from plugins.disabledRuntime
+```
+
+Server-profile hardening fields render to:
+
+```text
+STEAM_UPDATE_POLICY
+ENABLE_PLUGIN_RUNTIME
+CS2_ADMIN_STEAM_IDS
+CS2_ADMIN_FLAGS
 ```
 
 ## Generate manifests
@@ -62,6 +79,44 @@ Then add them to the target `kustomization.yaml` and run:
 ```bash
 kubectl kustomize k8s >/tmp/cs2-platform-rendered.yaml
 kubectl apply --dry-run=server -f /tmp/cs2-platform-rendered.yaml
+```
+
+## Runtime plugin containment
+
+When a plugin dependency becomes unsafe on the current CS2/CounterStrikeSharp build, do not hand-edit the live pod. Declare the containment in the mode profile:
+
+```yaml
+plugins:
+  enabled:
+    - cs2rcon
+  disabledRuntime:
+    - CS2-SimpleAdmin
+    - CS2-CustomVotes
+    - GameModeManager
+    - MenuManagerAPI
+    - MenuManagerCore
+    - PlayerSettings
+```
+
+The generator and production checks should keep the Deployment env in sync:
+
+```text
+CS2_DISABLED_PLUGINS=CS2-SimpleAdmin,CS2-CustomVotes,GameModeManager,MenuManagerAPI,MenuManagerCore,PlayerSettings
+```
+
+At runtime the Python entrypoint copies the pinned plugin bundle, then removes these plugin folders from `addons/counterstrikesharp/plugins/`. Verify the result before promotion:
+
+```bash
+kubectl -n cs2-servers exec deploy/staging-mirage-multicfg-01 -- \
+  bash -lc 'find /home/steam/cs2/game/csgo/addons/counterstrikesharp/plugins -mindepth 1 -maxdepth 1 -type d -printf "%f\n" | sort'
+PYTHONPATH=src python -m cs2_tools.smoke
+```
+
+Expected for the contained All Weapons DM baseline:
+
+```text
+CS2Rcon
+no_fatal_logs: none
 ```
 
 ## Cache field

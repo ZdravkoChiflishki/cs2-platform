@@ -38,6 +38,26 @@ Answer:
 6. Test the plugin feature.
 7. Watch pod restart count and logs.
 
+## Containment for broken dependency stacks
+
+If smoke/logs show CounterStrikeSharp callback spam such as:
+
+```text
+(cssharp:Core) Error invoking callback
+Schema target points to null
+MenuManagerAPI.Core.PlayerInfo.OnTick
+```
+
+then treat the affected dependency stack as unsafe for this CS2/CSS build. First check upstream releases, then contain through the mode profile instead of live-pod deletion:
+
+1. Add the affected folder names to `plugins.disabledRuntime` in the mode profile.
+2. Ensure the rendered Deployment has matching `CS2_DISABLED_PLUGINS`.
+3. Deploy through the normal Argo/GitOps path.
+4. Verify `PYTHONPATH=src python -m cs2_tools.smoke` reports `no_fatal_logs: none`.
+5. Verify the live plugin folders and `css_plugins list` show only the intended plugin set.
+
+For the current All Weapons DM containment baseline, only `CS2Rcon` should remain loaded until MenuManagerAPI/GameModeManager compatibility is fixed.
+
 ## Verification
 
 ```bash
