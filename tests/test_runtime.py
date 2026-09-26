@@ -75,6 +75,17 @@ def test_server_config_reads_plugin_runtime_environment(monkeypatch, tmp_path):
     assert cfg.admin_flags == ("@css/rcon", "@css/root")
 
 
+def test_server_config_reads_disabled_plugins_environment(monkeypatch):
+    monkeypatch.setenv("RCON_PASSWORD", "secret")
+    monkeypatch.setenv("STEAM_ACCOUNT", "token")
+    monkeypatch.setenv("API_KEY", "apikey")
+    monkeypatch.setenv("CS2_DISABLED_PLUGINS", "MenuManagerAPI, GameModeManager")
+
+    cfg = ServerConfig.from_env()
+
+    assert cfg.disabled_plugins == ("MenuManagerAPI", "GameModeManager")
+
+
 def test_server_config_fails_when_required_secret_missing(monkeypatch):
     monkeypatch.delenv("RCON_PASSWORD", raising=False)
 

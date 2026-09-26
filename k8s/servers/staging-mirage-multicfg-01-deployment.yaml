@@ -66,6 +66,8 @@ spec:
               value: always
             - name: ENABLE_PLUGIN_RUNTIME
               value: "true"
+            - name: CS2_DISABLED_PLUGINS
+              value: "CS2-SimpleAdmin,CS2-CustomVotes,GameModeManager,MenuManagerAPI,MenuManagerCore,PlayerSettings"
             - name: CS2_ADMIN_STEAM_IDS
               value: "76561199127257988"
             - name: CS2_ADMIN_FLAGS

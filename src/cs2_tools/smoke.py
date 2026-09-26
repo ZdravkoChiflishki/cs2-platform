@@ -46,10 +46,20 @@ def run_kubectl_check(namespace: str, selector: str, deployment: str) -> list[Sm
     checks.append(SmokeCheck("deployment_available", available >= 1, f"available={available}"))
 
     logs = _kubectl_text("logs", pod_name, "-n", namespace, "--tail=600")
-    bad_terms = ["Segmentation fault", "FATAL ERROR", "NETWORK_DISCONNECT_LOOPSHUTDOWN"]
-    found = [term for term in bad_terms if term in logs]
-    checks.append(SmokeCheck("no_fatal_logs", not found, ", ".join(found) if found else "none"))
+    checks.append(evaluate_logs(logs))
     return checks
+
+
+def evaluate_logs(logs: str) -> SmokeCheck:
+    bad_terms = [
+        "Segmentation fault",
+        "FATAL ERROR",
+        "NETWORK_DISCONNECT_LOOPSHUTDOWN",
+        "Error invoking callback",
+        "Schema target points to null",
+    ]
+    found = [term for term in bad_terms if term in logs]
+    return SmokeCheck("no_fatal_logs", not found, ", ".join(found) if found else "none")
 
 
 def _kubectl_json(*args: str) -> dict:

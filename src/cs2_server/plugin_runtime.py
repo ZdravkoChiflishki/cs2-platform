@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -41,6 +42,7 @@ class PluginRuntime:
     enabled: bool
     admin_steam_ids: tuple[str, ...] = ()
     admin_flags: tuple[str, ...] = ("@css/rcon",)
+    disabled_plugins: tuple[str, ...] = ()
 
     def apply(self) -> PluginRuntimePlan:
         if not self.enabled:
@@ -53,6 +55,7 @@ class PluginRuntime:
         copied += _write_css_admins(self.csgo_root, self.admin_steam_ids, self.admin_flags)
         copied += _write_gamemodes_server(self.csgo_root)
         copied += _write_gamemode_manager_config(self.csgo_root)
+        copied += _remove_disabled_plugins(self.csgo_root, self.disabled_plugins)
         return PluginRuntimePlan(enabled=True, copied=copied, reason="applied")
 
 
@@ -214,3 +217,16 @@ def _copy_tree(source: Path, target: Path) -> int:
         destination.write_bytes(item.read_bytes())
         copied += 1
     return copied
+
+
+def _remove_disabled_plugins(csgo_root: Path, disabled_plugins: tuple[str, ...]) -> int:
+    removed = 0
+    plugins_root = csgo_root / "addons" / "counterstrikesharp" / "plugins"
+    for plugin_name in disabled_plugins:
+        if not plugin_name or "/" in plugin_name or ".." in plugin_name:
+            continue
+        path = plugins_root / plugin_name
+        if path.exists():
+            shutil.rmtree(path)
+            removed += 1
+    return removed

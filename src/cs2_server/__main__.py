@@ -51,6 +51,7 @@ def main() -> int:
         enabled=config.plugin_runtime_enabled,
         admin_steam_ids=config.admin_steam_ids,
         admin_flags=config.admin_flags,
+        disabled_plugins=config.disabled_plugins,
     ).apply()
     log("plugin_runtime_checked", enabled=plugin_plan.enabled, copied=plugin_plan.copied, reason=plugin_plan.reason)
 

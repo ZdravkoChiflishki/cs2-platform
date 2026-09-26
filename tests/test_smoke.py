@@ -1,4 +1,4 @@
-from cs2_tools.smoke import SmokeCheck, evaluate_server_info
+from cs2_tools.smoke import SmokeCheck, evaluate_server_info, evaluate_logs
 from cs2_tools.query_server import ServerInfo
 
 
@@ -38,3 +38,19 @@ def test_evaluate_server_info_reports_mismatch():
 
     assert SmokeCheck("max_players", False, "expected 24, got 20") in checks
     assert SmokeCheck("bots", False, "expected 0, got 3") in checks
+
+
+def test_evaluate_logs_flags_counterstrikesharp_callback_spam():
+    logs = """
+23:19:51 [EROR] (cssharp:Core) Error invoking callback
+System.ArgumentNullException: Schema target points to null. (Parameter 'pointer')
+   at MenuManagerAPI.Core.PlayerInfo.OnTick()
+"""
+
+    check = evaluate_logs(logs)
+
+    assert check == SmokeCheck(
+        "no_fatal_logs",
+        False,
+        "Error invoking callback, Schema target points to null",
+    )

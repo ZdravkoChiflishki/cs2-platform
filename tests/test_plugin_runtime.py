@@ -71,3 +71,19 @@ def test_plugin_runtime_writes_css_admins_for_rcon_permission(tmp_path):
     assert plan.copied == 4
     assert admins["admin-1"]["identity"] == "76561199127257988"
     assert admins["admin-1"]["flags"] == ["@css/rcon", "@css/root"]
+
+
+def test_plugin_runtime_removes_disabled_plugin_folders_after_copy(tmp_path):
+    source = tmp_path / "runtime"
+    csgo = tmp_path / "csgo"
+    (source / "addons" / "counterstrikesharp" / "plugins" / "MenuManagerAPI").mkdir(parents=True)
+    (source / "addons" / "counterstrikesharp" / "plugins" / "MenuManagerAPI" / "MenuManagerAPI.dll").write_text("dll")
+    (source / "addons" / "counterstrikesharp" / "plugins" / "GameModeManager").mkdir(parents=True)
+    (source / "addons" / "counterstrikesharp" / "plugins" / "GameModeManager" / "GameModeManager.dll").write_text("dll")
+
+    runtime = PluginRuntime(source_root=source, csgo_root=csgo, enabled=True, disabled_plugins=("MenuManagerAPI",))
+
+    runtime.apply()
+
+    assert not (csgo / "addons" / "counterstrikesharp" / "plugins" / "MenuManagerAPI").exists()
+    assert (csgo / "addons" / "counterstrikesharp" / "plugins" / "GameModeManager" / "GameModeManager.dll").exists()
