@@ -2,7 +2,7 @@ from pathlib import Path
 
 import yaml
 
-from cs2_tools.server_generator import ServerProfile, render_server_manifests
+from cs2_tools.server_generator import ServerProfile, load_server_profile, render_server_manifests
 
 
 def test_render_server_manifests_uses_profile_and_mode_defaults(tmp_path):
@@ -42,6 +42,8 @@ plugins:
         cpu_limit="4000m",
         memory_request="2Gi",
         memory_limit="8Gi",
+        admin_steam_ids=("76561199127257988",),
+        admin_flags=("@css/rcon", "@css/root"),
     )
 
     rendered = render_server_manifests(profile, config_root=tmp_path / "configs")
@@ -67,6 +69,10 @@ plugins:
     assert env["GAME_TYPE"] == "0"
     assert env["GAME_MODE"] == "0"
     assert env["MAP_GROUP"] == "mg_active"
+    assert env["STEAM_UPDATE_POLICY"] == "always"
+    assert env["ENABLE_PLUGIN_RUNTIME"] == "true"
+    assert env["CS2_ADMIN_STEAM_IDS"] == "76561199127257988"
+    assert env["CS2_ADMIN_FLAGS"] == "@css/rcon,@css/root"
     assert env["CS2_DISABLED_PLUGINS"] == "GameModeManager,MenuManagerAPI"
     assert "CS2_CACHE_ROOT" not in env
 
@@ -116,3 +122,34 @@ plugins:
     assert env["CS2_CACHE_ROOT"] == "/cache/cs2"
     assert mounts["cs2-cache"] == "/cache/cs2"
     assert any(volume["name"] == "cs2-cache" for volume in deployment["spec"]["template"]["spec"]["volumes"])
+
+
+def test_load_server_profile_reads_hardening_fields(tmp_path):
+    profile_path = tmp_path / "server.yaml"
+    profile_path.write_text(
+        yaml.safe_dump(
+            {
+                "server_id": "dm-01",
+                "namespace": "cs2-servers",
+                "mode": "all-weapons-dm",
+                "display_name": "ZIZO.GG DM 01",
+                "map": "de_mirage",
+                "port": 26003,
+                "public_address": "zizogaming.duckdns.org:26003",
+                "node": "k0s-slave5",
+                "image": "zizobg/cs2-server@sha256:def",
+                "steam_update_policy": "always",
+                "plugin_runtime_enabled": True,
+                "admin_steam_ids": ["76561199127257988"],
+                "admin_flags": ["@css/rcon", "@css/root"],
+            },
+            sort_keys=False,
+        )
+    )
+
+    profile = load_server_profile(profile_path)
+
+    assert profile.steam_update_policy == "always"
+    assert profile.plugin_runtime_enabled is True
+    assert profile.admin_steam_ids == ("76561199127257988",)
+    assert profile.admin_flags == ("@css/rcon", "@css/root")

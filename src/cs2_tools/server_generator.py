@@ -27,6 +27,10 @@ class ServerProfile:
     cpu_limit: str = "4000m"
     memory_request: str = "2Gi"
     memory_limit: str = "8Gi"
+    steam_update_policy: str = "always"
+    plugin_runtime_enabled: bool = True
+    admin_steam_ids: tuple[str, ...] = ()
+    admin_flags: tuple[str, ...] = ("@css/rcon",)
 
 
 def load_server_profile(path: Path) -> ServerProfile:
@@ -38,6 +42,9 @@ def load_server_profile(path: Path) -> ServerProfile:
     missing = [field.name for field in fields(ServerProfile) if field.default is MISSING and field.default_factory is MISSING and field.name not in data]
     if missing:
         raise ValueError(f"missing server profile fields in {path}: {', '.join(missing)}")
+    for key in ("admin_steam_ids", "admin_flags"):
+        if key in data:
+            data[key] = tuple(str(item).strip() for item in data[key] or [] if str(item).strip())
     return ServerProfile(**data)
 
 
@@ -99,7 +106,13 @@ def render_server_manifests(profile: ServerProfile, config_root: Path = Path("co
         {"name": "MAP_GROUP", "value": mode.map_group},
         {"name": "CONFIG_ROOT", "value": "/opt/cs2-platform/configs"},
         {"name": "CS2_ROOT", "value": "/home/steam/cs2"},
+        {"name": "STEAM_UPDATE_POLICY", "value": profile.steam_update_policy},
+        {"name": "ENABLE_PLUGIN_RUNTIME", "value": str(profile.plugin_runtime_enabled).lower()},
     ]
+    if profile.admin_steam_ids:
+        env.append({"name": "CS2_ADMIN_STEAM_IDS", "value": ",".join(profile.admin_steam_ids)})
+    if profile.admin_flags:
+        env.append({"name": "CS2_ADMIN_FLAGS", "value": ",".join(profile.admin_flags)})
     if mode.disabled_plugins:
         env.append({"name": "CS2_DISABLED_PLUGINS", "value": ",".join(mode.disabled_plugins)})
     if profile.cache_root:
